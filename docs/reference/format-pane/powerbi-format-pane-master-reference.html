@@ -1,0 +1,2174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Power BI Theme Studio — Format Pane Replica | Batch 1 + General + Treemap</title>
+<style>
+:root{
+  --app-bg:#f4f4f4;
+  --pane-bg:#f3f2f1;
+  --panel:#ffffff;
+  --ink:#171717;
+  --muted:#686868;
+  --line:#d6d6d6;
+  --soft-line:#e5e5e5;
+  --accent:#007f72;
+  --accent-2:#006d63;
+  --off:#a2a2a2;
+  --disabled:#9f9f9f;
+  --shadow:0 1px 5px rgba(0,0,0,.14);
+  --radius:6px;
+  --font:"Segoe UI", Arial, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font);
+  color:var(--ink);
+  background:linear-gradient(180deg,#fbfbfb 0%,var(--app-bg) 100%);
+}
+.page{
+  max-width:1540px;
+  margin:0 auto;
+  padding:26px;
+}
+.hero{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:22px 24px;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+  display:grid;
+  gap:10px;
+}
+.kicker{
+  width:max-content;
+  padding:6px 11px;
+  border-radius:999px;
+  background:#e7f8f5;
+  color:var(--accent);
+  font-weight:700;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+.hero h1{margin:0;font-size:29px;line-height:1.2}
+.hero p{margin:0;max-width:1180px;color:var(--muted);font-size:14px;line-height:1.55}
+.toolbar{
+  margin-top:18px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.toolbar .label{
+  font-weight:700;
+  font-size:13px;
+  color:#303030;
+  margin-right:4px;
+}
+.visual-btn{
+  height:34px;
+  padding:0 14px;
+  background:#fff;
+  border:1px solid #bdbdbd;
+  border-radius:999px;
+  font:600 13px var(--font);
+  cursor:pointer;
+}
+.visual-btn.active{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#fff;
+}
+.layout{
+  margin-top:18px;
+  display:grid;
+  grid-template-columns:380px minmax(0,1fr);
+  gap:22px;
+  align-items:start;
+}
+.pane{
+  border:1px solid #cdcdcd;
+  border-radius:11px;
+  overflow:hidden;
+  background:var(--pane-bg);
+  box-shadow:0 12px 30px rgba(0,0,0,.09);
+}
+.pane-head{
+  height:48px;
+  display:flex;
+  align-items:center;
+  gap:20px;
+  padding:0 16px;
+  border-bottom:1px solid var(--line);
+  background:#f7f6f5;
+}
+.tab{
+  position:relative;
+  height:48px;
+  display:flex;
+  align-items:center;
+  font-size:14px;
+  cursor:pointer;
+  user-select:none;
+}
+.tab.active{font-weight:600}
+.tab.active::after{
+  content:"";
+  height:2px;
+  background:var(--accent);
+  position:absolute;
+  left:0;right:0;bottom:7px;
+}
+.more{
+  margin-left:auto;
+  font-size:22px;
+  line-height:1;
+  transform:translateY(-2px);
+}
+.pane-body{
+  height:1050px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-width:thin;
+  scrollbar-color:#8e8e8e transparent;
+}
+.pane-body::-webkit-scrollbar{width:8px}
+.pane-body::-webkit-scrollbar-thumb{background:#8e8e8e;border-radius:999px}
+.hidden{display:none!important}
+.accordion{
+  border-bottom:1px solid var(--line);
+  background:var(--pane-bg);
+}
+.acc-head{
+  min-height:52px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 14px;
+  user-select:none;
+  cursor:pointer;
+}
+.chev{
+  font-size:18px;
+  line-height:1;
+  transform:rotate(0deg);
+  transition:transform .16s ease;
+  display:inline-flex;
+  width:12px;
+  justify-content:center;
+}
+.accordion.open .chev{transform:rotate(90deg)}
+.acc-title{font-weight:600;font-size:14px}
+.spacer{flex:1}
+.toggle{
+  width:37px;height:20px;border:0;border-radius:999px;background:var(--off);
+  padding:0;position:relative;display:inline-flex;align-items:center;cursor:pointer;
+}
+.toggle::before{
+  content:"";
+  width:14px;height:14px;border-radius:50%;
+  background:#fff;margin-left:3px;
+  box-shadow:0 1px 2px rgba(0,0,0,.25);
+  transition:transform .15s ease;
+}
+.toggle.on{background:var(--accent)}
+.toggle.on::before{transform:translateX(17px)}
+.toggle span{
+  position:absolute;
+  left:5px;top:2px;
+  color:#fff;font-weight:700;font-size:10px;opacity:0;
+}
+.toggle.on span{opacity:1}
+.toggle.mini{width:34px;height:18px}
+.toggle.mini::before{width:12px;height:12px}
+.toggle.mini.on::before{transform:translateX(16px)}
+.acc-body{display:none;padding:0 10px 12px}
+.accordion.open .acc-body{display:block}
+.card{
+  background:var(--panel);
+  border:1px solid #e5e5e5;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:11px 11px 12px;
+  margin-bottom:10px;
+}
+.card-head{
+  display:flex;align-items:center;gap:8px;
+  font-size:14px;font-weight:600;
+  margin-bottom:10px;
+}
+.subchev{font-size:17px;transform:rotate(90deg);line-height:1}
+.field{display:grid;gap:5px;margin-bottom:10px}
+.field:last-child{margin-bottom:0}
+.field-label{font-size:12px;line-height:1.25;color:#191919}
+.field-label.disabled{color:var(--disabled)}
+select,input[type="text"],input[type="number"],textarea{
+  font:12px var(--font);
+  color:#232323;
+  background:#fff;
+  border:1px solid #9b9b9b;
+  border-radius:1px;
+}
+select,input[type="text"],input[type="number"]{height:31px;padding:0 8px}
+select,input[type="text"]{width:100%}
+input[type="number"]{width:74px}
+textarea{
+  width:100%;height:82px;resize:vertical;padding:8px;line-height:1.35;
+}
+.inline-select-number{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 66px;
+  gap:8px;
+  align-items:center;
+}
+.style-row{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.style-btn,.align-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:29px;height:29px;
+  border:1px solid #8f8f8f;background:#fff;
+  font-size:16px;color:#111;
+}
+.style-btn{font-weight:700}
+.style-btn.italic{font-style:italic;font-weight:500}
+.style-btn.underline{text-decoration:underline;font-weight:500}
+.align-btn{font-size:16px}
+.color-row{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.color-control{
+  position:relative;
+  width:59px;height:31px;
+  border:1px solid #8f8f8f;background:#fff;
+  display:inline-flex;align-items:center;justify-content:space-between;
+  padding:0 6px;
+}
+.color-control input[type="color"]{
+  width:18px;height:18px;border:1px solid #434343;padding:0;background:#fff;cursor:pointer;
+}
+.color-control .down{font-size:12px;color:#222}
+.fx{
+  height:31px;width:32px;border:1px solid #8f8f8f;background:#fff;
+  font:bold italic 14px Georgia,serif;color:#111;
+}
+.slider-row{
+  display:grid;grid-template-columns:74px 1fr;gap:8px;align-items:center;
+}
+.unit-box{
+  height:31px;border:1px solid #9b9b9b;background:#fff;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 8px;font-size:12px;
+}
+input[type="range"]{width:100%;accent-color:#777}
+.inline-toggle{
+  min-height:22px;
+  display:flex;align-items:center;gap:8px;
+}
+.inline-toggle .field-label{flex:1}
+.reset{
+  display:flex;align-items:center;gap:5px;
+  color:#999;font-size:12px;padding:0 14px 12px;
+}
+.size-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+.padding-box{
+  display:grid;
+  grid-template-columns:58px 40px 58px;
+  grid-template-rows:29px 40px 29px;
+  gap:4px;
+  width:max-content;
+  align-items:center;
+  justify-items:center;
+}
+.padding-box .center{
+  width:40px;height:40px;border:1px solid #8f8f8f;background:#f5f5f5;
+  grid-column:2;grid-row:2;
+}
+.padding-box input{
+  width:58px;height:29px;padding:0 4px;
+}
+.padding-box .top{grid-column:2;grid-row:1}
+.padding-box .left{grid-column:1;grid-row:2}
+.padding-box .right{grid-column:3;grid-row:2}
+.padding-box .bottom{grid-column:2;grid-row:3}
+.metrics-row{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.summary{
+  background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;
+  box-shadow:0 8px 28px rgba(0,0,0,.07);
+  min-height:1050px;
+  display:grid;align-content:start;gap:18px;
+}
+.summary h2{margin:0;font-size:22px}
+.summary p{margin:0;color:var(--muted);font-size:14px;line-height:1.55}
+.note{
+  background:#fff6e6;border:1px solid #efd49e;color:#765212;
+  border-radius:12px;padding:14px;font-size:13px;line-height:1.5;
+}
+.matrix{
+  border:1px solid var(--line);border-radius:12px;overflow:hidden;
+}
+.matrix-row{
+  display:grid;grid-template-columns:170px 1fr 140px;
+  border-bottom:1px solid var(--soft-line);
+  font-size:13px;
+}
+.matrix-row:last-child{border-bottom:0}
+.matrix-row > div{padding:10px 12px}
+.matrix-row.header{background:#f6f8fb;font-weight:700}
+.badge{
+  display:inline-flex;align-items:center;height:24px;padding:0 8px;
+  border-radius:999px;background:#e7f8f5;color:var(--accent);
+  font-weight:700;font-size:12px;
+}
+.small{font-size:12px;color:var(--muted)}
+.section-note{
+  padding:10px 12px;background:#fcfcfc;border:1px dashed #d3d3d3;border-radius:6px;
+  color:#555;font-size:12px;line-height:1.45;
+}
+@media(max-width:1080px){
+  .layout{grid-template-columns:1fr}
+  .pane{max-width:380px}
+  .summary{min-height:auto}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <section class="hero">
+    <div class="kicker">Power BI Theme Studio · consolidated property-pane reference</div>
+    <h1>Batch 1 Visual Properties + Shared General Properties</h1>
+    <p>
+      This HTML replicates the Power BI format-pane structure with real control types: accordions, dropdowns,
+      direct text inputs, Power BI-style toggle switches, color-palette inputs, fx buttons, numeric inputs, and sliders.
+      The <b>General</b> tab is common to all visuals. The <b>Visual</b> tab changes by visual type.
+    </p>
+  </section>
+
+  <div class="toolbar">
+    <span class="label">Select visual:</span>
+    <button class="visual-btn active" data-visual="donut">Donut</button>
+    <button class="visual-btn" data-visual="pie">Pie</button>
+    <button class="visual-btn" data-visual="funnel">Funnel</button>
+    <button class="visual-btn" data-visual="treemap">Treemap</button>
+    <button class="visual-btn" data-visual="barstacked">Bar / Stacked Bar</button>
+    <button class="visual-btn" data-visual="clusteredbar">Clustered Bar</button>
+    <button class="visual-btn" data-visual="clusteredcolumn">Clustered Column</button>
+    <button class="visual-btn" data-visual="columnstacked">Column / Stacked Column</button>
+    <button class="visual-btn" data-visual="hundredstackedbar">100% Stacked Bar</button>
+    <button class="visual-btn" data-visual="hundredstackedcolumn">100% Stacked Column</button>
+  </div>
+
+  <div class="layout">
+    <aside class="pane">
+      <div class="pane-head">
+        <div class="tab active" data-mode="visual">Visual</div>
+        <div class="tab" data-mode="general">General</div>
+        <div class="more">⋯</div>
+      </div>
+
+      <!-- DONUT VISUAL -->
+      <div class="pane-body visual-pane" id="donut-pane">
+        <section class="accordion open">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Legend</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Position</span><select>
+                <option>Top left</option><option>Top center</option><option>Top right</option><option>Top left stacked</option><option>Top right stacked</option><option>Center left</option><option selected>Center right</option><option>Bottom left</option><option>Bottom center</option><option>Bottom right</option>
+              </select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Text</div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Discount Band"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Slices</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Apply settings to</div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>All</option><option>Medium</option><option>High</option><option>Low</option><option>None</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Color</div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#ffffff"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Border <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Match fill color</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Width</span><input type="number" value="1"></div>
+              <div class="field inline-toggle"><span class="field-label">Hide inner borders</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Spacing</div>
+              <div class="field"><span class="field-label">Inner radius</span><div class="slider-row"><span class="unit-box">60 %</span><input type="range" value="60"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Detail labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Position</span><select><option selected>Outside</option><option>Inside</option><option>Prefer outside</option><option>Prefer inside</option></select></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Overflow text</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Label contents</span><select><option>Category</option><option>Data value</option><option>Percent of total</option><option>Category, data value</option><option>Category, percent of total</option><option selected>Data value, percent of total</option><option>All detail labels</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values</div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label disabled">Background</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Percentage decimal places</span><select><option selected>Auto</option></select></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Rotation</span></div>
+          <div class="acc-body"><div class="card"><div class="field"><span class="field-label">Rotation</span><div class="slider-row"><span class="unit-box">0 °</span><input type="range" value="0"></div></div></div></div>
+        </section>
+      </div>
+
+      <!-- PIE VISUAL -->
+      <div class="pane-body visual-pane hidden" id="pie-pane">
+        <section class="accordion open">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Legend</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Options</div><div class="field"><span class="field-label">Position</span><select><option>Top left</option><option>Top center</option><option>Top right</option><option>Top left stacked</option><option>Top right stacked</option><option>Center left</option><option selected>Center right</option><option>Bottom left</option><option>Bottom center</option><option>Bottom right</option></select></div></div>
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Text</div><div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div><div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div><div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div></div>
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div><div class="field"><span class="field-label">Title text</span><input type="text" value="Discount Band"></div></div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Slices</span></div>
+          <div class="acc-body">
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Apply settings to</div><div class="field"><span class="field-label">Series</span><select><option selected>All</option><option>Medium</option><option>High</option><option>Low</option><option>None</option></select></div></div>
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Color</div><div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#ffffff"><span class="down">⌄</span></label></div></div><div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div></div>
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Border <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div><div class="field inline-toggle"><span class="field-label">Match fill color</span><button class="toggle mini"><span>On</span></button></div><div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label></div></div><div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div><div class="field"><span class="field-label">Width</span><input type="number" value="1"></div><div class="field inline-toggle"><span class="field-label">Hide inner borders</span><button class="toggle mini"><span>On</span></button></div></div>
+          </div>
+        </section>
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Detail labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Options</div><div class="field"><span class="field-label">Position</span><select><option selected>Outside</option><option>Inside</option><option>Prefer outside</option><option>Prefer inside</option></select></div><div class="field inline-toggle"><span class="field-label disabled">Overflow text</span><button class="toggle mini on"><span>On</span></button></div><div class="field"><span class="field-label">Label contents</span><select><option>Category</option><option>Data value</option><option>Percent of total</option><option>Category, data value</option><option>Category, percent of total</option><option selected>Data value, percent of total</option><option>All detail labels</option></select></div></div>
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Values</div><div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div><div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div><div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div><div class="field"><span class="field-label disabled">Background</span><select><option selected>Auto</option></select></div><div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option></select></div><div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div><div class="field"><span class="field-label">Percentage decimal places</span><select><option selected>Auto</option></select></div></div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Rotation</span></div>
+          <div class="acc-body"><div class="card"><div class="field"><span class="field-label">Rotation</span><div class="slider-row"><span class="unit-box">0 °</span><input type="range" value="0"></div></div></div></div>
+        </section>
+      </div>
+
+      <!-- FUNNEL VISUAL -->
+      <div class="pane-body visual-pane hidden" id="funnel-pane">
+        <section class="accordion open">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Colors</span></div>
+          <div class="acc-body">
+            <div class="card"><div class="field"><span class="field-label">Default</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div><div class="field inline-toggle"><span class="field-label">Show all</span><button class="toggle mini"><span>On</span></button></div></div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Data labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Options</div><div class="field"><span class="field-label">Position</span><select><option selected>Inside center</option></select></div><div class="field"><span class="field-label">Label contents</span><select><option selected>Data value</option></select></div></div>
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Values</div><div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div><div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div><div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div><div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option></select></div><div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div><div class="field"><span class="field-label">Percentage decimal places</span><select><option selected>Auto</option></select></div></div>
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Background <span class="spacer"></span><button class="toggle mini"><span>On</span></button></div><div class="field"><span class="field-label disabled">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#ffffff"><span class="down">⌄</span></label></div></div><div class="field"><span class="field-label disabled">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div></div>
+          </div>
+        </section>
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Category labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body"><div class="card"><div class="card-head"><span class="subchev">›</span>Values</div><div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div><div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div><div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div></div></div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Conversion rate labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body"><div class="card"><div class="card-head"><span class="subchev">›</span>Values</div><div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div><div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div><div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div></div></div>
+        </section>
+      </div>
+
+      <!-- TREEMAP VISUAL -->
+      <div class="pane-body visual-pane hidden" id="treemap-pane">
+        <section class="accordion open">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Legend</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Options</div><div class="field"><span class="field-label">Position</span><select><option selected>Top left</option><option>Top center</option><option>Top right</option><option>Top left stacked</option><option>Top right stacked</option><option>Center left</option><option>Center right</option><option>Bottom left</option><option>Bottom center</option><option>Bottom right</option></select></div></div>
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Text</div><div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div><div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div><div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div></div>
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div><div class="field"><span class="field-label">Title text</span><input type="text" value="Date Month"></div></div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Colors</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Advanced controls</span><button class="fx">fx</button></div>
+              <div class="field"><span class="field-label">United States of America</span><div class="color-row"><label class="color-control"><input type="color" value="#111111"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Canada</span><div class="color-row"><label class="color-control"><input type="color" value="#222222"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">France</span><div class="color-row"><label class="color-control"><input type="color" value="#454545"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Germany</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Mexico</span><div class="color-row"><label class="color-control"><input type="color" value="#777777"><span class="down">⌄</span></label></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Layout</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Tiling Method</span><select><option selected>Squarified</option></select></div>
+              <div class="field"><span class="field-label">Space between all nodes</span><input type="number" value="0"></div>
+              <div class="field"><span class="field-label">Space between groups</span><input type="number" value="0"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Data labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body"><div class="card"><div class="card-head"><span class="subchev">›</span>Values</div><div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div><div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div><div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div><div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option></select></div><div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div></div></div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Category labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body"><div class="card"><div class="card-head"><span class="subchev">›</span>Values</div><div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div><div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div><div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div></div></div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+      </div>
+
+
+      <!-- BAR / STACKED BAR VISUAL -->
+      <div class="pane-body visual-pane hidden" id="barstacked-pane">
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Y-axis</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Maximum width</span><div class="slider-row"><span class="unit-box">25 %</span><input type="range" value="25"></div></div>
+              <div class="field inline-toggle"><span class="field-label">Switch axis position</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Concatenate labels</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Auto"></div>
+              <div class="field"><span class="field-label">Style</span><select><option selected>Show title only</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>DIN</option><option>Segoe UI</option><option>Arial</option><option>Calibri</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Minimum category height</span><div class="slider-row"><span class="unit-box">20 px</span><input type="range" value="20"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">X-axis</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Range</div>
+              <div class="field"><span class="field-label">Minimum</span><div class="color-row"><select style="width:76px"><option selected>Auto</option></select><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Maximum</span><div class="color-row"><select style="width:76px"><option selected>Auto</option></select><button class="fx">fx</button></div></div>
+              <div class="field inline-toggle"><span class="field-label">Logarithmic scale</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Invert range</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option><option>None</option><option>Thousands</option><option>Millions</option><option>Billions</option><option>Trillions</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Auto"></div>
+              <div class="field"><span class="field-label">Style</span><select><option selected>Show title only</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>DIN</option><option>Segoe UI</option><option>Arial</option><option>Calibri</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title" style="color:#aaa">Legend</span><span class="spacer"></span><button class="toggle mini"><span>On</span></button></div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title" style="color:#aaa">Small multiples</span></div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Gridlines</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Vertical <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#d9d9d9"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Line style</span><select><option>Solid</option><option>Dashed</option><option selected>Dotted</option><option>Custom</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Scale by width</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Zoom slider</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field inline-toggle"><span class="field-label">X-axis</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Slider labels</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Slider tooltips</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Bars</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Categories</span><select><option selected>All</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Color</div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#228be6"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Border <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Match bar color</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#228be6"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Hide inner borders</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field inline-toggle"><span class="field-label disabled">Reverse order</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Sort by value</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Space between categories</span><div class="slider-row"><span class="unit-box">20 %</span><input type="range" value="20"></div></div>
+              <div class="field"><span class="field-label disabled">Space between series</span><div class="slider-row"><span class="unit-box">0 px</span><input type="range" value="0"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Ribbons</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>Sum of Sales</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Color</div>
+              <div class="field inline-toggle"><span class="field-label">Match series color</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#228be6"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">51 %</span><input type="range" value="51"></div></div>
+            </div>
+            <div class="card"><div class="card-head"><span class="subchev">›</span>Border <span class="spacer"></span><button class="toggle mini"><span>On</span></button></div></div>
+            <div class="card"><div class="card-head" style="color:#aaa"><span class="subchev">›</span>Layout</div></div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Data labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>All</option></select></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Show for this series</span><button class="toggle mini on"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Position</span><select><option selected>Auto</option><option>Inside end</option><option>Outside end</option><option>Inside center</option><option>Inside base</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Overflow text</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Optimize label display</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Content</span><select><option selected>Series name</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Value <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Field</span><button class="visual-btn" style="border-radius:2px;width:100%;justify-content:space-between;text-align:left;background:#fff;color:#111">Sum of Sales ›</button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Detail <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Data</span><button class="visual-btn" style="border-radius:2px;width:100%;background:#fff;color:#111">+Add data</button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Background <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#111111"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">90 %</span><input type="range" value="90"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Layout</span><select><option selected>Single line</option></select></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title" style="color:#aaa">Total labels</span><span class="spacer"></span><button class="toggle mini"><span>On</span></button></div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Plot area background</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><button class="visual-btn" style="border-radius:2px;width:100%;background:#fff;color:#111;text-align:left">Browse... 🖼</button></div>
+              <div class="field"><span class="field-label">Image fit</span><select><option selected>Fit</option></select></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+      </div>
+
+
+      <!-- CLUSTERED BAR VISUAL -->
+      <div class="pane-body visual-pane hidden" id="clusteredbar-pane">
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Y-axis</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Maximum width</span><div class="slider-row"><span class="unit-box">25 %</span><input type="range" value="25"></div></div>
+              <div class="field inline-toggle"><span class="field-label">Switch axis position</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Concatenate labels</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Auto"></div>
+              <div class="field"><span class="field-label">Style</span><select><option selected>Show title only</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>DIN</option><option>Segoe UI</option><option>Arial</option><option>Calibri</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Minimum category height</span><div class="slider-row"><span class="unit-box">20 px</span><input type="range" value="20"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">X-axis</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Range</div>
+              <div class="field"><span class="field-label">Minimum</span><div class="color-row"><select style="width:76px"><option selected>Auto</option></select><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Maximum</span><div class="color-row"><select style="width:76px"><option selected>Auto</option></select><button class="fx">fx</button></div></div>
+              <div class="field inline-toggle"><span class="field-label">Logarithmic scale</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Invert range</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option><option>None</option><option>Thousands</option><option>Millions</option><option>Billions</option><option>Trillions</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Auto"></div>
+              <div class="field"><span class="field-label">Style</span><select><option selected>Show title only</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>DIN</option><option>Segoe UI</option><option>Arial</option><option>Calibri</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Legend</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Position</span><select><option selected>Top left</option><option>Top center</option><option>Top right</option><option>Top left stacked</option><option>Top right stacked</option><option>Center left</option><option>Center right</option><option>Bottom left</option><option>Bottom center</option><option>Bottom right</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Text</div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="10"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Year"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title" style="color:#aaa">Small multiples</span></div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Gridlines</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Vertical <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#d9d9d9"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Line style</span><select><option>Solid</option><option>Dashed</option><option selected>Dotted</option><option>Custom</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Scale by width</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Zoom slider</span><span class="spacer"></span><button class="toggle mini"><span>On</span></button></div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Bars</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="section-note">The Bars section is present in the captured Clustered Bar format pane. Expanded sub-properties were not shown in the supplied screenshots, so this HTML keeps the section available without inventing unsupported controls.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Data labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>All</option></select></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Show for this series</span><button class="toggle mini on"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Position</span><select><option selected>Auto</option><option>Inside end</option><option>Outside end</option><option>Inside center</option><option>Inside base</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Overflow text</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Optimize label display</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Content</span><select><option selected>Series name</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Value <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Field</span><button class="visual-btn" style="border-radius:2px;width:100%;justify-content:space-between;text-align:left;background:#fff;color:#111">Sum of Sales ›</button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Detail <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Data</span><button class="visual-btn" style="border-radius:2px;width:100%;background:#fff;color:#111">+Add data</button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Background <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#111111"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">90 %</span><input type="range" value="90"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Layout</span><select><option selected>Single line</option></select></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Plot area background</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><button class="visual-btn" style="border-radius:2px;width:100%;background:#fff;color:#111;text-align:left">Browse... 🖼</button></div>
+              <div class="field"><span class="field-label">Image fit</span><select><option selected>Fit</option></select></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+      </div>
+
+
+      <!-- CLUSTERED COLUMN VISUAL -->
+      <div class="pane-body visual-pane hidden" id="clusteredcolumn-pane">
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">X-axis</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Maximum height</span><div class="slider-row"><span class="unit-box">25 %</span><input type="range" value="25"></div></div>
+              <div class="field inline-toggle"><span class="field-label">Concatenate labels</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Auto"></div>
+              <div class="field"><span class="field-label">Style</span><select><option selected>Show title only</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>DIN</option><option>Segoe UI</option><option>Arial</option><option>Calibri</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Minimum category width</span><div class="slider-row"><span class="unit-box">20 px</span><input type="range" value="20"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Y-axis</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Range</div>
+              <div class="field"><span class="field-label">Minimum</span><div class="color-row"><select style="width:76px"><option selected>Auto</option></select><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Maximum</span><div class="color-row"><select style="width:76px"><option selected>Auto</option></select><button class="fx">fx</button></div></div>
+              <div class="field inline-toggle"><span class="field-label">Logarithmic scale</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Invert range</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option><option>None</option><option>Thousands</option><option>Millions</option><option>Billions</option><option>Trillions</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Switch axis position</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Auto"></div>
+              <div class="field"><span class="field-label">Style</span><select><option selected>Show title only</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>DIN</option><option>Segoe UI</option><option>Arial</option><option>Calibri</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Legend</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card"><div class="section-note">Legend section is captured as available and enabled in the Clustered Column format pane. Inner legend sub-options were not expanded in the supplied screenshots, so the section is preserved without inventing extra controls.</div></div>
+          </div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title" style="color:#aaa">Small multiples</span></div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Gridlines</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Horizontal <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#d9d9d9"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Line style</span><select><option>Solid</option><option>Dashed</option><option selected>Dotted</option><option>Custom</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Scale by width</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Zoom slider</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field inline-toggle"><span class="field-label">Y-axis</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Slider labels</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Slider tooltips</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Columns</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>All</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Color</div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#228be6"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Border <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Match column color</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field inline-toggle"><span class="field-label">Reverse order</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Sort by value</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Space between categories</span><div class="slider-row"><span class="unit-box">20 %</span><input type="range" value="20"></div></div>
+              <div class="field"><span class="field-label">Space between series</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field inline-toggle"><span class="field-label">Overlap</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Flip overlap</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Data labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>All</option></select></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Show for this series</span><button class="toggle mini on"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Orientation</span><select><option>Vertical</option><option selected>Horizontal</option></select></div>
+              <div class="field"><span class="field-label">Position</span><select><option selected>Auto</option><option>Inside end</option><option>Outside end</option><option>Inside center</option><option>Inside base</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Overflow text</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Optimize label display</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Content</span><select><option selected>Series name</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Value <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Field</span><button class="visual-btn" style="border-radius:2px;width:100%;background:#fff;color:#111">+Add data</button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Detail <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Data</span><button class="visual-btn" style="border-radius:2px;width:100%;background:#fff;color:#111">+Add data</button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Background <span class="spacer"></span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label disabled">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#ffffff"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label disabled">Transparency</span><div class="slider-row"><span class="unit-box">% </span><input type="range" value="50"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Layout</span><select><option selected>Multi-line</option></select></div>
+              <div class="field"><span class="field-label">Horizontal alignment</span><div class="style-row"><span class="align-btn">≡</span><span class="align-btn">≣</span><span class="align-btn">≡</span></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Plot area background</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><button class="visual-btn" style="border-radius:2px;width:100%;background:#fff;color:#111;text-align:left">Browse... 🖼</button></div>
+              <div class="field"><span class="field-label">Image fit</span><select><option selected>Fit</option></select></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+      </div>
+
+
+      <!-- COLUMN / STACKED COLUMN VISUAL -->
+      <div class="pane-body visual-pane hidden" id="columnstacked-pane">
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">X-axis</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Maximum height</span><div class="slider-row"><span class="unit-box">25 %</span><input type="range" value="25"></div></div>
+              <div class="field inline-toggle"><span class="field-label">Concatenate labels</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Auto"></div>
+              <div class="field"><span class="field-label">Style</span><select><option selected>Show title only</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>DIN</option><option>Segoe UI</option><option>Arial</option><option>Calibri</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Minimum category width</span><div class="slider-row"><span class="unit-box">20 px</span><input type="range" value="20"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Y-axis</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Range</div>
+              <div class="field"><span class="field-label">Minimum</span><div class="color-row"><select style="width:76px"><option selected>Auto</option></select><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Maximum</span><div class="color-row"><select style="width:76px"><option selected>Auto</option></select><button class="fx">fx</button></div></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Logarithmic scale</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Invert range</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option><option>None</option><option>Thousands</option><option>Millions</option><option>Billions</option><option>Trillions</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Switch axis position</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Auto"></div>
+              <div class="field"><span class="field-label">Style</span><select><option selected>Show title only</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>DIN</option><option>Segoe UI</option><option>Arial</option><option>Calibri</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Legend</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Position</span><select><option selected>Top left</option><option>Top center</option><option>Top right</option><option>Top left stacked</option><option>Top right stacked</option><option>Center left</option><option>Center right</option><option>Bottom left</option><option>Bottom center</option><option>Bottom right</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Text</div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="10"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Segment"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title" style="color:#aaa">Small multiples</span></div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Gridlines</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Horizontal <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#d9d9d9"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Line style</span><select><option>Solid</option><option>Dashed</option><option selected>Dotted</option><option>Custom</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Scale by width</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Zoom slider</span><span class="spacer"></span><button class="toggle mini"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field inline-toggle"><span class="field-label">Y-axis</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Slider labels</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Slider tooltips</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Columns</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>Government</option><option>All</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Color</div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#df6f34"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Border <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Match fill color</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+            </div>
+            <div class="card">
+              <div class="card-head" style="color:#aaa"><span class="subchev">›</span>Layout</div>
+              <div class="section-note">Layout is shown as unavailable/disabled in the supplied capture for this Column / Stacked Column setup.</div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Ribbons</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>All</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Color</div>
+              <div class="field inline-toggle"><span class="field-label">Match series color</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label disabled">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#228be6"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">30 %</span><input type="range" value="30"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Border <span class="spacer"></span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Match ribbon color</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label disabled">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label disabled">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label disabled">Width</span><input type="text" value="1 px"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Space between ribbons and bars</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Data labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>All</option></select></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Show for this series</span><button class="toggle mini on"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Orientation</span><select><option>Vertical</option><option selected>Horizontal</option></select></div>
+              <div class="field"><span class="field-label">Position</span><select><option selected>Auto</option><option>Inside end</option><option>Inside center</option><option>Inside base</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Overflow text</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Optimize label display</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Content</span><select><option selected>Series name</option><option>Custom</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Value <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Field</span><button class="visual-btn" style="border-radius:2px;width:100%;justify-content:space-between;text-align:left;background:#fff;color:#111">Sum of Sales ›</button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option><option>None</option><option>Thousands</option><option>Millions</option><option>Billions</option><option>Trillions</option><option>Custom</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Detail <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Data</span><button class="visual-btn" style="border-radius:2px;width:100%;background:#fff;color:#111">+Add data</button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Background <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#111111"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">90 %</span><input type="range" value="90"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Layout</span><select><option selected>Multi-line</option></select></div>
+              <div class="field"><span class="field-label">Horizontal alignment</span><div class="style-row"><span class="align-btn">≡</span><span class="align-btn">≣</span><span class="align-btn">≡</span></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Total labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values</div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Display units</span><select><option selected>Auto</option><option>None</option><option>Thousands</option><option>Millions</option><option>Billions</option><option>Trillions</option></select></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Split positive and negative</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Background <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#111111"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">90 %</span><input type="range" value="90"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Plot area background</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><button class="visual-btn" style="border-radius:2px;width:100%;background:#fff;color:#111;text-align:left">Browse... 🖼</button></div>
+              <div class="field"><span class="field-label">Image fit</span><select><option selected>Fit</option></select></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+      </div>
+
+
+      <!-- 100% STACKED BAR VISUAL -->
+      <div class="pane-body visual-pane hidden" id="hundredstackedbar-pane">
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Y-axis</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Maximum width</span><div class="slider-row"><span class="unit-box">25 %</span><input type="range" value="25"></div></div>
+              <div class="field inline-toggle"><span class="field-label">Switch axis position</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Concatenate labels</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Auto"></div>
+              <div class="field"><span class="field-label">Style</span><select><option selected>Show title only</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>DIN</option><option>Segoe UI</option><option>Arial</option><option>Calibri</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Minimum category height</span><div class="slider-row"><span class="unit-box">20 px</span><input type="range" value="20"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">X-axis</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Range</div>
+              <div class="field"><span class="field-label">Minimum</span><div class="color-row"><select style="width:76px"><option selected>Auto</option></select><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Maximum</span><div class="color-row"><select style="width:76px"><option selected>Auto</option></select><button class="fx">fx</button></div></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Logarithmic scale</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Invert range</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Auto"></div>
+              <div class="field"><span class="field-label">Style</span><select><option selected>Show title only</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>DIN</option><option>Segoe UI</option><option>Arial</option><option>Calibri</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Legend</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Position</span><select><option selected>Top left</option><option>Top center</option><option>Top right</option><option>Top left stacked</option><option>Top right stacked</option><option>Center left</option><option>Center right</option><option>Bottom left</option><option>Bottom center</option><option>Bottom right</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Text</div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="10"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Segment"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title" style="color:#aaa">Small multiples</span></div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Gridlines</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Vertical <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#d9d9d9"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Line style</span><select><option>Solid</option><option>Dashed</option><option selected>Dotted</option><option>Custom</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Scale by width</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Zoom slider</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field inline-toggle"><span class="field-label">X-axis</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Slider labels</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Slider tooltips</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Bars</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>Government</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Color</div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#df6f34"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Border <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Match fill color</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+            </div>
+            <div class="card">
+              <div class="card-head" style="color:#aaa"><span class="subchev">›</span>Layout</div>
+              <div class="section-note">Layout is shown as unavailable/disabled in the supplied 100% Stacked Bar capture.</div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Ribbons</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>All</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Color</div>
+              <div class="field inline-toggle"><span class="field-label">Match series color</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label disabled">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#228be6"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">30 %</span><input type="range" value="30"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Border <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Match ribbon color</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Space between ribbons and bars</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Data labels</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>All</option></select></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Show for this series</span><button class="toggle mini on"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Position</span><select><option selected>Auto</option><option>Inside end</option><option>Inside center</option><option>Inside base</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Overflow text</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Optimize label display</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Content</span><select><option selected>Series name</option><option>Custom</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Value <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Field</span><button class="visual-btn" style="border-radius:2px;width:100%;justify-content:space-between;text-align:left;background:#fff;color:#111">Sum of Sales ›</button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Detail <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Content</span><select><option selected>Percent of total</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Background <span class="spacer"></span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label disabled">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#ffffff"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label disabled">Transparency</span><div class="slider-row"><span class="unit-box">% </span><input type="range" value="50"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Layout</span><select><option selected>Single line</option></select></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Plot area background</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><button class="visual-btn" style="border-radius:2px;width:100%;background:#fff;color:#111;text-align:left">Browse... 🖼</button></div>
+              <div class="field"><span class="field-label">Image fit</span><select><option selected>Fit</option></select></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+      </div>
+
+
+      <!-- 100% STACKED COLUMN VISUAL -->
+      <div class="pane-body visual-pane hidden" id="hundredstackedcolumn-pane">
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">X-axis</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Maximum height</span><div class="slider-row"><span class="unit-box">25 %</span><input type="range" value="25"></div></div>
+              <div class="field inline-toggle"><span class="field-label">Concatenate labels</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Auto"></div>
+              <div class="field"><span class="field-label">Style</span><select><option selected>Show title only</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>DIN</option><option>Segoe UI</option><option>Arial</option><option>Calibri</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Minimum category width</span><div class="slider-row"><span class="unit-box">20 px</span><input type="range" value="20"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Y-axis</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Range</div>
+              <div class="field"><span class="field-label">Minimum</span><div class="color-row"><select style="width:76px"><option selected>Auto</option></select><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Maximum</span><div class="color-row"><select style="width:76px"><option selected>Auto</option></select><button class="fx">fx</button></div></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Logarithmic scale</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Invert range</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Values <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field inline-toggle"><span class="field-label">Switch axis position</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Auto"></div>
+              <div class="field"><span class="field-label">Style</span><select><option selected>Show title only</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>DIN</option><option>Segoe UI</option><option>Arial</option><option>Calibri</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Legend</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Position</span><select><option selected>Top left</option><option>Top center</option><option>Top right</option><option>Top left stacked</option><option>Top right stacked</option><option>Center left</option><option>Center right</option><option>Bottom left</option><option>Bottom center</option><option>Bottom right</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Text</div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="10"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Title text</span><input type="text" value="Segment"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title" style="color:#aaa">Small multiples</span></div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Gridlines</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Horizontal <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#d9d9d9"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Line style</span><select><option>Solid</option><option>Dashed</option><option selected>Dotted</option><option>Custom</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Scale by width</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Zoom slider</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field inline-toggle"><span class="field-label">Y-axis</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Slider labels</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Slider tooltips</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Columns</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>Government</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Color</div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#df6f34"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Border <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Match fill color</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#df6f34"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+            </div>
+            <div class="card">
+              <div class="card-head" style="color:#aaa"><span class="subchev">›</span>Layout</div>
+              <div class="section-note">Layout is shown as unavailable/disabled in the supplied 100% Stacked Column capture.</div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Ribbons</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>All</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Color</div>
+              <div class="field inline-toggle"><span class="field-label">Match series color</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label disabled">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#228be6"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">30 %</span><input type="range" value="30"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Border <span class="spacer"></span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Data labels</span><span style="font-size:14px;color:#aa7a00;margin-left:4px;">⚠</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span></div>
+              <div class="field"><span class="field-label">Series</span><select><option selected>All</option></select></div>
+              <div class="field inline-toggle"><span class="field-label disabled">Show for this series</span><button class="toggle mini on"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Orientation</span><select><option>Vertical</option><option selected>Horizontal</option></select></div>
+              <div class="field"><span class="field-label">Position</span><select><option selected>Auto</option><option>Inside end</option><option>Inside center</option><option>Inside base</option></select></div>
+              <div class="field inline-toggle"><span class="field-label">Overflow text</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Optimize label display</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Content</span><select><option selected>Series name</option><option>Custom</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Value <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Field</span><button class="visual-btn" style="border-radius:2px;width:100%;justify-content:space-between;text-align:left;background:#fff;color:#111">Sum of Sales ›</button></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Detail <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Content</span><select><option selected>Percent of total</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#666666"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+              <div class="field"><span class="field-label">Value decimal places</span><select><option selected>Auto</option></select></div>
+              <div class="field"><span class="field-label">Show blank as</span><input type="text" value="0"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Background <span class="spacer"></span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field"><span class="field-label disabled">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#ffffff"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label disabled">Transparency</span><div class="slider-row"><span class="unit-box">% </span><input type="range" value="50"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Layout</div>
+              <div class="field"><span class="field-label">Layout</span><select><option selected>Multi-line</option></select></div>
+              <div class="field"><span class="field-label">Horizontal alignment</span><div class="style-row"><span class="align-btn">≡</span><span class="align-btn">≣</span><span class="align-btn">≡</span></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Plot area background</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><button class="visual-btn" style="border-radius:2px;width:100%;background:#fff;color:#111;text-align:left">Browse... 🖼</button></div>
+              <div class="field"><span class="field-label">Image fit</span><select><option selected>Fit</option></select></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+      </div>
+
+      <!-- SHARED GENERAL -->
+      <div class="pane-body general-pane hidden" id="general-pane">
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Properties</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Size</div>
+              <div class="field"><span class="field-label">Height</span><input type="number" value="280"></div>
+              <div class="field"><span class="field-label">Width</span><input type="number" value="370"></div>
+              <div class="field inline-toggle"><span class="field-label">Lock aspect ratio</span><button class="toggle mini on"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Position</div>
+              <div class="field"><span class="field-label">Horizontal</span><input type="number" value="752"></div>
+              <div class="field"><span class="field-label">Vertical</span><input type="number" value="87"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Padding</div>
+              <div class="padding-box">
+                <input class="top" type="text" value="8 px"><input class="left" type="text" value="8 px"><div class="center"></div><input class="right" type="text" value="8 px"><input class="bottom" type="text" value="8 px">
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Advanced options</div>
+              <div class="field inline-toggle"><span class="field-label disabled">Responsive</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Maintain layer order</span><button class="toggle mini on"><span>On</span></button></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Title</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Title</div>
+              <div class="field"><span class="field-label">Text</span><div class="color-row" style="flex-wrap:nowrap"><input type="text" value="Sum of Sales"><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Heading</span><select><option selected>Heading 3</option><option>Heading 1</option><option>Heading 2</option><option>Heading 4</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="12"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Text color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Background color</span><div class="color-row"><label class="color-control"><input type="color" value="#ffffff"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Horizontal alignment</span><div class="style-row"><span class="align-btn">≡</span><span class="align-btn">≣</span><span class="align-btn">≡</span></div></div>
+              <div class="field inline-toggle"><span class="field-label">Text wrap</span><button class="toggle mini on"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Subtitle <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Text</span><div class="color-row" style="flex-wrap:nowrap"><input type="text" value="by Discount Band"><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Heading</span><select><option selected>Heading 4</option><option>Heading 1</option><option>Heading 2</option><option>Heading 3</option></select></div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Text color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Horizontal alignment</span><div class="style-row"><span class="align-btn">≡</span><span class="align-btn">≣</span><span class="align-btn">≡</span></div></div>
+              <div class="field inline-toggle"><span class="field-label">Text wrap</span><button class="toggle mini on"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Divider <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Line style</span><select><option selected>Solid</option><option>Dashed</option><option>Dotted</option></select></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+              <div class="field inline-toggle"><span class="field-label">Ignore padding</span><button class="toggle mini on"><span>On</span></button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Spacing</div>
+              <div class="field inline-toggle"><span class="field-label">Customize spacing</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Space below title</span><input type="text" value="5 px"></div>
+              <div class="field"><span class="field-label">Space below subtitle</span><input type="text" value="5 px"></div>
+              <div class="field"><span class="field-label">Space below title area</span><input type="text" value="5 px"></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Effects</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Background <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#ffffff"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Visual border <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#ffffff"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Rounded corners</span><div class="slider-row"><span class="unit-box">2 px</span><input type="range" value="2"></div></div>
+              <div class="field"><span class="field-label">Width</span><input type="text" value="1 px"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Shadow <span class="spacer"></span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label><button class="fx">fx</button></div></div>
+              <div class="field"><span class="field-label">Offset</span><select><option selected>Outside</option><option>Inside</option></select></div>
+              <div class="field"><span class="field-label">Position</span><select><option selected>Bottom right</option><option>Bottom</option><option>Bottom left</option><option>Right</option><option>Center</option><option>Left</option><option>Top right</option><option>Top</option><option>Top left</option><option>Custom</option></select></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Data format</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Apply settings to</span><select><option selected>Discount Band</option><option>Sum of Sales</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Format options</div>
+              <div class="field"><span class="field-label">Format</span><select><option selected></option><option>Currency</option><option>Number</option><option>Percentage</option></select></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Header icons</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Colors</div>
+              <div class="field"><span class="field-label">Background</span><div class="color-row"><label class="color-control"><input type="color" value="#ffffff"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Border</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Icon</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Icons</div>
+              <div class="field inline-toggle"><span class="field-label">Visual information</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Visual warning</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Visual error</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Drill on dropdown</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Drill up</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Drill down</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Show next level</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Expand to next level</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Pin</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Focus mode</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">See data layout</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">More options</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Filter</span><button class="toggle mini on"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Help tooltip</span><button class="toggle mini"><span>On</span></button></div>
+              <div class="field inline-toggle"><span class="field-label">Smart narrative</span><button class="toggle mini"><span>On</span></button></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Tooltips</span><span class="spacer"></span><button class="toggle on"><span>On</span></button></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Options</div>
+              <div class="field"><span class="field-label">Type</span><select><option selected>Report page</option></select></div>
+              <div class="field"><span class="field-label">Page</span><select><option selected>Auto</option></select></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Text</div>
+              <div class="field"><span class="field-label">Font</span><div class="inline-select-number"><select><option selected>Segoe UI</option><option>Arial</option><option>Calibri</option><option>DIN</option></select><input type="number" value="9"></div></div>
+              <div class="field"><div class="style-row"><span class="style-btn">B</span><span class="style-btn italic">I</span><span class="style-btn underline">U</span></div></div>
+              <div class="field"><span class="field-label">Label color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Value color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Drill text and icon color</span><div class="color-row"><label class="color-control"><input type="color" value="#000000"><span class="down">⌄</span></label></div></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><span class="subchev">›</span>Background</div>
+              <div class="field"><span class="field-label">Color</span><div class="color-row"><label class="color-control"><input type="color" value="#ffffff"><span class="down">⌄</span></label></div></div>
+              <div class="field"><span class="field-label">Transparency</span><div class="slider-row"><span class="unit-box">0 %</span><input type="range" value="0"></div></div>
+            </div>
+            <div class="card"><div class="field inline-toggle"><span class="field-label">Actions</span><button class="toggle mini on"><span>On</span></button></div></div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+
+        <section class="accordion">
+          <div class="acc-head"><span class="chev">›</span><span class="acc-title">Alt text</span></div>
+          <div class="acc-body">
+            <div class="card">
+              <div class="field"><span class="field-label">Alt text</span><div class="color-row" style="align-items:flex-start;flex-wrap:nowrap"><textarea>Enter a description that will be read by a screen reader on selecting the visual.</textarea><button class="fx">fx</button></div></div>
+            </div>
+          </div>
+          <div class="reset">↻ Reset to default</div>
+        </section>
+      </div>
+    </aside>
+
+    <section class="summary">
+      <h2>Consolidated HTML reference updated</h2>
+      <p>
+        The left pane now combines the shared <b>General</b> properties applicable to every visual with
+        visual-specific panes for <b>Donut</b>, <b>Pie</b>, <b>Funnel</b>, <b>Treemap</b>, <b>Bar / Stacked Bar</b>, <b>Clustered Bar</b>, <b>Clustered Column</b>, <b>Column / Stacked Column</b>, <b>100% Stacked Bar</b>, and <b>100% Stacked Column</b>.
+        Controls are represented using the same interaction type seen in Power BI.
+      </p>
+      <div class="note">
+        <b>Color controls are functional.</b> Clicking a swatch opens the browser color palette. Dropdowns retain captured options where you provided them.
+        Font dropdowns currently include a small default set; more Power BI font options can be extended later.
+      </div>
+      <div class="matrix">
+        <div class="matrix-row header"><div>Panel</div><div>Included sections</div><div>Status</div></div>
+        <div class="matrix-row"><div>General</div><div>Properties, Title, Effects, Data format, Header icons, Tooltips, Alt text</div><div><span class="badge">Added</span></div></div>
+        <div class="matrix-row"><div>Donut</div><div>Legend, Slices, Detail labels, Rotation</div><div><span class="badge">Included</span></div></div>
+        <div class="matrix-row"><div>Pie</div><div>Legend, Slices, Detail labels, Rotation</div><div><span class="badge">Included</span></div></div>
+        <div class="matrix-row"><div>Funnel</div><div>Colors, Data labels, Category labels, Conversion rate labels</div><div><span class="badge">Included</span></div></div>
+        <div class="matrix-row"><div>Treemap</div><div>Legend, Colors, Layout, Data labels, Category labels</div><div><span class="badge">Added</span></div></div>
+        <div class="matrix-row"><div>Bar / Stacked Bar</div><div>Y-axis, X-axis, Gridlines, Zoom slider, Bars, Ribbons, Data labels, Total labels, Plot area background</div><div><span class="badge">Added</span></div></div>
+        <div class="matrix-row"><div>Clustered Bar</div><div>Y-axis, X-axis, Legend, Small multiples, Gridlines, Zoom slider, Bars, Data labels, Plot area background</div><div><span class="badge">Added</span></div></div>
+        <div class="matrix-row"><div>Clustered Column</div><div>X-axis, Y-axis, Legend, Small multiples, Gridlines, Zoom slider, Columns, Data labels, Plot area background</div><div><span class="badge">Added</span></div></div>
+        <div class="matrix-row"><div>Column / Stacked Column</div><div>X-axis, Y-axis, Legend, Small multiples, Gridlines, Zoom slider, Columns, Ribbons, Data labels, Total labels, Plot area background</div><div><span class="badge">Added</span></div></div>
+        <div class="matrix-row"><div>100% Stacked Bar</div><div>Y-axis, X-axis, Legend, Small multiples, Gridlines, Zoom slider, Bars, Ribbons, Data labels, Plot area background</div><div><span class="badge">Added</span></div></div>
+        <div class="matrix-row"><div>100% Stacked Column</div><div>X-axis, Y-axis, Legend, Small multiples, Gridlines, Zoom slider, Columns, Ribbons, Data labels, Plot area background</div><div><span class="badge">Added</span></div></div>
+      </div>
+      <div class="section-note">
+        Next batch can follow this exact format: add the visual-level pane sections, actual dropdown values, default Power BI-style control types, and keep the shared General pane unchanged.
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+const visualButtons = document.querySelectorAll('.visual-btn');
+const visualPanes = document.querySelectorAll('.visual-pane');
+const generalPane = document.getElementById('general-pane');
+const tabs = document.querySelectorAll('.tab');
+let activeVisual = 'donut';
+let activeMode = 'visual';
+
+function showActive(){
+  tabs.forEach(t=>t.classList.toggle('active', t.dataset.mode===activeMode));
+  visualPanes.forEach(p=>p.classList.add('hidden'));
+  generalPane.classList.add('hidden');
+  if(activeMode==='general'){
+    generalPane.classList.remove('hidden');
+  } else {
+    document.getElementById(activeVisual+'-pane').classList.remove('hidden');
+  }
+}
+visualButtons.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    visualButtons.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeVisual = btn.dataset.visual;
+    activeMode = 'visual';
+    showActive();
+  });
+});
+tabs.forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    activeMode = tab.dataset.mode;
+    showActive();
+  });
+});
+document.querySelectorAll('.acc-head').forEach(head=>{
+  head.addEventListener('click',e=>{
+    if(e.target.closest('.toggle')) return;
+    head.parentElement.classList.toggle('open');
+  });
+});
+document.querySelectorAll('.toggle').forEach(toggle=>{
+  toggle.addEventListener('click',e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    toggle.classList.toggle('on');
+  });
+});
+showActive();
+</script>
+</body>
+</html>

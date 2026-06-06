@@ -6,8 +6,10 @@ import { useThemeStore } from '@/store/themeStore'
 const SIZE_FIELDS = [
   { key: 'general.callout.fontSize', label: 'Callout size', min: 16, max: 56, fallback: 36 },
   { key: 'general.title.fontSize', label: 'Title size', min: 8, max: 32, fallback: 14 },
+  { key: 'general.subtitle.fontSize', label: 'Subtitle size', min: 8, max: 24, fallback: 10 },
   { key: 'general.header.fontSize', label: 'Header size', min: 8, max: 28, fallback: 11 },
   { key: 'general.label.fontSize', label: 'Label size', min: 7, max: 18, fallback: 9 },
+  { key: 'general.dataLabels.fontSize', label: 'Data label size', min: 7, max: 22, fallback: 9 },
 ] as const
 
 function numberValue(value: string | number | boolean | undefined, fallback: number): number {

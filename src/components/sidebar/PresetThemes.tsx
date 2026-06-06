@@ -1,83 +1,420 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { PRESET_CATEGORIES, getPresetsByCategory } from '@/lib/presets'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ChevronLeft, ChevronRight, Clock, Search, Star } from 'lucide-react'
+import { getAllThemePresets, getThemePresetCategories } from '@/lib/themePresetRegistry'
 import { useThemeStore } from '@/store/themeStore'
 import type { PresetTheme } from '@/types'
 
+const ALL_PRESETS = getAllThemePresets()
+const PAGE_SIZE = 100
+const FAVORITES_KEY = 'dc-theme-favorites'
+const RECENTS_KEY = 'dc-theme-recents'
+const RECENTS_LIMIT = 20
+const CATEGORY_ORDER = [
+  'All',
+  'Pastel Professional',
+  'Corporate',
+  'Vivid / Creative',
+  'Soft / Pastel',
+  'Executive / Finance',
+  'General',
+  'Nature / Sustainability',
+  'Minimal / Monochrome',
+] as const
+const COLOR_FAMILY_OPTIONS = ['All', 'Blue', 'Orange', 'Red', 'Green', 'Neutral', 'Gold', 'Teal', 'Rose', 'Black', 'Violet'] as const
+const USE_CASE_OPTIONS = [
+  'All',
+  'Corporate Palette',
+  'Executive / Finance',
+  'Soft Palette',
+  'Vivid Palette',
+  'Pastel + Dark Text',
+  'Dark Anchor + Light Background',
+  'Warm Accent + Cool Primary',
+  'Navy + Gold',
+  'Green + Neutral',
+  'Monochrome',
+] as const
+
+type Scope = 'all' | 'favorites' | 'recent'
+type CategoryFilter = string
+type ColorFamilyFilter = (typeof COLOR_FAMILY_OPTIONS)[number]
+type UseCaseFilter = (typeof USE_CASE_OPTIONS)[number]
+
 function matchesPreset(preset: PresetTheme, colors: string[], bg: string, fg: string): boolean {
+  const presetColors = preset.dataColorsFull
+  const currentColors = colors
   return (
-    preset.bg.toUpperCase() === bg.toUpperCase() &&
-    preset.fg.toUpperCase() === fg.toUpperCase() &&
-    preset.colors.every((color, index) => color.toUpperCase() === colors[index]?.toUpperCase())
+    (preset.dashboardBackground ?? preset.background).toUpperCase() === bg.toUpperCase() &&
+    preset.foreground.toUpperCase() === fg.toUpperCase() &&
+    presetColors.length === currentColors.length &&
+    presetColors.every((color, index) => color.toUpperCase() === currentColors[index]?.toUpperCase())
+  )
+}
+
+/** Full palette strip — every theme colour, equal width, no clipping/overflow. */
+function PaletteBand({ colors }: { colors: string[] }) {
+  const list = colors.length ? colors : ['#E2E8F0']
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        display: 'flex',
+        width: '100%',
+        height: 24,
+        overflow: 'hidden',
+        borderRadius: 8,
+        border: '1px solid rgba(15,23,42,.14)',
+      }}
+    >
+      {list.map((color, i) => (
+        <span key={`${color}-${i}`} style={{ flex: '1 1 0', minWidth: 0, height: '100%', background: color }} />
+      ))}
+    </div>
+  )
+}
+
+/** Search index: name, id, tags, family, patterns, category, collection, hex colours. */
+function searchableText(preset: PresetTheme): string {
+  return [
+    preset.id,
+    preset.name,
+    preset.category,
+    preset.categories?.join(' '),
+    preset.collectionClass,
+    preset.tags?.join(' '),
+    preset.recommendedFor?.join(' '),
+    preset.dataColorsFull.join(' '),
+    preset.colors.join(' '),
+    preset.hue,
+    preset.profile,
+    preset.harmony,
+    preset.mode,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+}
+
+function normalizedWords(value: string): string[] {
+  return value
+    .toLowerCase()
+    .replace(/#[0-9a-f]{3,6}/g, ' ')
+    .split(/[^a-z0-9#]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+}
+
+function matchesUseCase(preset: PresetTheme, useCase: UseCaseFilter): boolean {
+  if (useCase === 'All') return true
+  const text = searchableText(preset)
+  return normalizedWords(useCase).every((word) => text.includes(word))
+}
+
+function filterSelectStyle(): React.CSSProperties {
+  return {
+    width: '100%',
+    height: 30,
+    border: '1px solid var(--border-ui)',
+    borderRadius: 6,
+    background: 'var(--surface)',
+    color: 'var(--text)',
+    fontSize: 10.5,
+    fontWeight: 650,
+    padding: '0 7px',
+    outline: 'none',
+    fontFamily: 'inherit',
+  }
+}
+
+function Pager({
+  start, end, total, page, totalPages, onPrev, onNext,
+}: {
+  start: number; end: number; total: number; page: number; totalPages: number; onPrev: () => void; onNext: () => void
+}) {
+  const btn = (disabled: boolean): React.CSSProperties => ({
+    width: 30, height: 26, borderRadius: 6, border: '1px solid var(--border-ui)',
+    background: 'var(--surface)', color: disabled ? 'var(--text-3)' : 'var(--text-2)',
+    cursor: disabled ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  })
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+      <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-3)' }}>
+        {start}–{end} of {total}
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button type="button" disabled={page === 0} onClick={onPrev} style={btn(page === 0)} aria-label="Previous page">
+          <ChevronLeft size={14} />
+        </button>
+        <span style={{ fontSize: 10, color: 'var(--text-3)', fontWeight: 700, minWidth: 54, textAlign: 'center' }}>
+          {page + 1} / {totalPages}
+        </span>
+        <button type="button" disabled={page >= totalPages - 1} onClick={onNext} style={btn(page >= totalPages - 1)} aria-label="Next page">
+          <ChevronRight size={14} />
+        </button>
+      </div>
+    </div>
   )
 }
 
 export function PresetThemes() {
-  const [category, setCategory] = useState<string>('All')
+  const [scope, setScope] = useState<Scope>('all')
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState<CategoryFilter>('All')
+  const [colorFamily, setColorFamily] = useState<ColorFamilyFilter>('All')
+  const [useCase, setUseCase] = useState<UseCaseFilter>('All')
+  const [page, setPage] = useState(0)
+  const [favorites, setFavorites] = useState<string[]>([])
+  const [recents, setRecents] = useState<string[]>([])
+
   const dataColors = useThemeStore((s) => s.dataColors)
   const bg = useThemeStore((s) => s.bg)
   const fg = useThemeStore((s) => s.fg)
   const applyPreset = useThemeStore((s) => s.applyPreset)
-  const presets = useMemo(() => getPresetsByCategory(category), [category])
+
+  // Load persisted favorites + recents.
+  useEffect(() => {
+    queueMicrotask(() => {
+      try {
+        const f = localStorage.getItem(FAVORITES_KEY)
+        if (f) setFavorites(JSON.parse(f) as string[])
+        const r = localStorage.getItem(RECENTS_KEY)
+        if (r) setRecents(JSON.parse(r) as string[])
+      } catch {
+        /* storage unavailable */
+      }
+    })
+  }, [])
+
+  const toggleFavorite = useCallback((id: string) => {
+    setFavorites((prev) => {
+      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [id, ...prev]
+      try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
+  }, [])
+
+  const selectTheme = useCallback((preset: PresetTheme) => {
+    applyPreset(preset)
+    setRecents((prev) => {
+      const next = [preset.id, ...prev.filter((x) => x !== preset.id)].slice(0, RECENTS_LIMIT)
+      try { localStorage.setItem(RECENTS_KEY, JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
+  }, [applyPreset])
+
+  const byId = useMemo(() => new Map(ALL_PRESETS.map((p) => [p.id, p])), [])
+  const categoryOptions = useMemo(() => {
+    const actual = new Set(getThemePresetCategories().filter((item) => item !== 'All'))
+    const ordered: string[] = CATEGORY_ORDER.filter((item) => item === 'All' || actual.has(item))
+    for (const item of actual) if (!ordered.includes(item)) ordered.push(item)
+    return ordered
+  }, [])
+
+  const scopedPresets = useMemo(() => {
+    if (scope === 'favorites') return favorites.map((id) => byId.get(id)).filter((p): p is PresetTheme => Boolean(p))
+    if (scope === 'recent') return recents.map((id) => byId.get(id)).filter((p): p is PresetTheme => Boolean(p))
+    return ALL_PRESETS
+  }, [scope, favorites, recents, byId])
+
+  const presets = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return scopedPresets.filter((preset) => {
+      const text = searchableText(preset)
+      const matchesSearch = !needle || text.includes(needle)
+      const matchesCategory = category === 'All' || (preset.categories ?? [preset.category]).includes(category)
+      const matchesFamily = colorFamily === 'All' || (preset.hue ?? '').toLowerCase() === colorFamily.toLowerCase()
+      return matchesSearch && matchesCategory && matchesFamily && matchesUseCase(preset, useCase)
+    })
+  }, [scopedPresets, query, category, colorFamily, useCase])
+
+  const totalPages = Math.max(1, Math.ceil(presets.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages - 1)
+  const pagePresets = presets.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE)
+  const start = presets.length ? safePage * PAGE_SIZE + 1 : 0
+  const end = Math.min(presets.length, (safePage + 1) * PAGE_SIZE)
+  const showPager = presets.length > PAGE_SIZE
+
+  const scopeButton = (value: Scope, label: string, icon?: React.ReactNode, count?: number) => (
+    <button
+      type="button"
+      onClick={() => { setScope(value); setPage(0) }}
+      style={{
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+        height: 28, borderRadius: 7, border: '1px solid var(--border-ui)',
+        background: scope === value ? 'var(--accent-ui)' : 'var(--surface)',
+        color: scope === value ? '#fff' : 'var(--text-2)',
+        fontSize: 10.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+      }}
+      aria-pressed={scope === value}
+    >
+      {icon}
+      {label}{typeof count === 'number' ? ` (${count})` : ''}
+    </button>
+  )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
-        {PRESET_CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            onClick={() => setCategory(cat)}
+      <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-3)' }}>Search themes</span>
+        <span style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Search size={12} strokeWidth={2} style={{ position: 'absolute', left: 8, color: 'var(--text-3)' }} />
+          <input
+            value={query}
+            onChange={(event) => { setQuery(event.target.value); setPage(0) }}
+            placeholder={`Search ${ALL_PRESETS.length} themes — name, tag, use case, colour…`}
+            spellCheck={false}
             style={{
-              border: '1px solid var(--border-ui)',
-              borderRadius: 999,
-              padding: '4px 8px',
-              fontSize: 10.5,
-              fontWeight: 700,
-              background: category === cat ? 'var(--accent-ui)' : 'var(--surface)',
-              color: category === cat ? 'white' : 'var(--text-2)',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
+              width: '100%', height: 30, border: '1px solid var(--border-ui)', borderRadius: 6,
+              background: 'var(--surface)', color: 'var(--text)', fontSize: 11, padding: '0 8px 0 26px', outline: 'none',
             }}
-          >
-            {cat}
-          </button>
-        ))}
+          />
+        </span>
+      </label>
+
+      {/* Simple scope switch — search-first, no category browsing required. */}
+      <div style={{ display: 'flex', gap: 6 }}>
+        {scopeButton('all', 'All')}
+        {scopeButton('favorites', 'Favorites', <Star size={12} strokeWidth={2} />, favorites.length)}
+        {scopeButton('recent', 'Recent', <Clock size={12} strokeWidth={2} />, recents.length)}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, maxHeight: 252, overflowY: 'auto', paddingRight: 2 }}>
-        {presets.map((preset) => {
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 6 }}>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-3)' }}>Category</span>
+          <select
+            value={category}
+            onChange={(event) => { setCategory(event.target.value); setPage(0) }}
+            style={filterSelectStyle()}
+            aria-label="Filter themes by category"
+          >
+            {categoryOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+          </select>
+        </label>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-3)' }}>Color Family</span>
+            <select
+              value={colorFamily}
+              onChange={(event) => { setColorFamily(event.target.value as ColorFamilyFilter); setPage(0) }}
+              style={filterSelectStyle()}
+              aria-label="Filter themes by color family"
+            >
+              {COLOR_FAMILY_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </label>
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-3)' }}>Use Case</span>
+            <select
+              value={useCase}
+              onChange={(event) => { setUseCase(event.target.value as UseCaseFilter); setPage(0) }}
+              style={filterSelectStyle()}
+              aria-label="Filter themes by use case"
+            >
+              {USE_CASE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {/* Top pagination */}
+      <Pager
+        start={start} end={end} total={presets.length} page={safePage} totalPages={totalPages}
+        onPrev={() => setPage((c) => Math.max(0, c - 1))}
+        onNext={() => setPage((c) => Math.min(totalPages - 1, c + 1))}
+      />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', maxHeight: 480, paddingRight: 2 }}>
+        {pagePresets.map((preset) => {
           const active = matchesPreset(preset, dataColors, bg, fg)
+          const fav = favorites.includes(preset.id)
           return (
-            <button
-              key={`${preset.cat}-${preset.name}`}
-              type="button"
-              onClick={() => applyPreset(preset)}
+            <div
+              key={preset.id}
+              role="button"
+              tabIndex={0}
+              className={`premium-theme-card ${active ? 'is-active' : ''}`}
+              onClick={() => selectTheme(preset)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectTheme(preset) } }}
+              title={[preset.name, preset.collectionClass, preset.recommendedFor?.[0]].filter(Boolean).join(' • ')}
               style={{
-                border: active ? '1px solid var(--accent-ui)' : '1px solid var(--border-ui)',
-                boxShadow: active ? '0 0 0 2px rgba(13,148,136,.16)' : 'none',
+                position: 'relative',
+                border: active ? '1.5px solid var(--accent-ui)' : '1px solid var(--border-ui)',
+                boxShadow: active ? '0 0 0 2px rgba(13,148,136,.12)' : 'none',
                 borderRadius: 8,
                 background: active ? 'var(--accent-soft)' : 'var(--surface)',
-                cursor: 'pointer',
-                padding: 7,
-                textAlign: 'left',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
+                cursor: 'pointer', padding: '8px 9px', width: '100%', minHeight: 58, fontFamily: 'inherit',
+                transition: 'border-color .12s, background .12s, box-shadow .12s',
               }}
             >
-              <div style={{ display: 'flex', height: 12, overflow: 'hidden', borderRadius: 3 }}>
-                {preset.colors.slice(0, 5).map((color, index) => (
-                  <span key={`${color}-${index}`} style={{ flex: 1, background: color }} />
-                ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <span style={{
+                    fontSize: 11.5, fontWeight: active ? 800 : 700,
+                    color: active ? 'var(--accent-ui)' : 'var(--text)', lineHeight: 1.2,
+                    flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {preset.name}
+                  </span>
+                  {preset.collectionClass && (
+                    <span style={{
+                      fontSize: 9, fontWeight: 800, color: 'var(--accent-ui)', flexShrink: 0,
+                      background: 'var(--accent-soft)', borderRadius: 999, padding: '1px 7px',
+                      maxWidth: 94, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {preset.collectionClass.replace(/\s*Collection$/i, '')}
+                    </span>
+                  )}
+                  {preset.hue && (
+                    <span style={{
+                      fontSize: 9, fontWeight: 800, color: 'var(--text-3)', flexShrink: 0,
+                      background: 'var(--surface-2)', border: '1px solid var(--border-ui)', borderRadius: 999, padding: '1px 6px',
+                      maxWidth: 58, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {preset.hue}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite(preset.id) }}
+                    title={fav ? 'Remove from favorites' : 'Add to favorites'}
+                    aria-label={fav ? `Remove ${preset.name} from favorites` : `Add ${preset.name} to favorites`}
+                    aria-pressed={fav}
+                    style={{
+                      flexShrink: 0, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: 'none', background: 'transparent', cursor: 'pointer',
+                      color: fav ? '#F59E0B' : 'var(--text-3)', padding: 0,
+                    }}
+                  >
+                    <Star size={14} strokeWidth={2} fill={fav ? 'currentColor' : 'none'} />
+                  </button>
+                </div>
+                <PaletteBand colors={preset.dataColorsFull} />
               </div>
-              <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 }}>{preset.name}</span>
-              <span style={{ fontSize: 9.5, color: 'var(--text-3)' }}>{preset.cat}</span>
-            </button>
+            </div>
           )
         })}
+
+        {presets.length === 0 && (
+          <div style={{ padding: '16px 10px', border: '1px dashed var(--border-ui)', borderRadius: 8, color: 'var(--text-3)', fontSize: 11, textAlign: 'center' }}>
+            {scope === 'favorites' ? 'No favorite themes yet — tap the star on any theme.'
+              : scope === 'recent' ? 'No recently used themes yet — select a theme to start.'
+              : 'No themes match your search.'}
+          </div>
+        )}
       </div>
+
+      {/* Bottom pagination */}
+      {showPager && (
+        <Pager
+          start={start} end={end} total={presets.length} page={safePage} totalPages={totalPages}
+          onPrev={() => setPage((c) => Math.max(0, c - 1))}
+          onNext={() => setPage((c) => Math.min(totalPages - 1, c + 1))}
+        />
+      )}
     </div>
   )
 }

@@ -1,179 +1,372 @@
-import { AX, cv } from './chartUtils'
+'use client'
+
+import { useId } from 'react'
+import { useElementSize } from '@/hooks/useElementSize'
+import {
+  computeContainerLayout,
+  computeLegendLayout,
+  truncateLegendLabel,
+  type LegendItem,
+  type Rect,
+} from '@/lib/pbi-mimic'
+import { AX, cv, f } from './chartUtils'
 import type { ChartVisualProps } from './ChartRenderer'
 
-type ChildTile = {
+type TreemapChild = {
   label: string
-  x: number
-  y: number
-  w: number
-  h: number
-  lines?: readonly string[]
+  value: number
 }
 
-type CountryGroup = {
+type TreemapGroup = {
   label: string
-  ci: number
-  x: number
-  y: number
-  w: number
-  h: number
-  children: readonly ChildTile[]
+  color: string
+  children: readonly TreemapChild[]
 }
 
-const GROUPS: readonly CountryGroup[] = [
+type LayoutItem<T> = {
+  item: T
+  rect: Rect
+}
+
+const GROUPS: readonly TreemapGroup[] = [
   {
     label: 'Saudi',
-    ci: 1,
-    x: 2,
-    y: 2,
-    w: 103,
-    h: 128,
+    color: cv(1),
     children: [
-      { label: 'Riyadh', x: 4, y: 16, w: 49, h: 48 },
-      { label: 'Jeddah', x: 55, y: 16, w: 48, h: 39 },
-      { label: 'Madina', x: 4, y: 66, w: 49, h: 36 },
-      { label: 'Dammam', x: 55, y: 57, w: 48, h: 45 },
-      { label: 'Al Khobar', x: 4, y: 104, w: 70, h: 24, lines: ['Al', 'Khobar'] },
-      { label: 'Mecca', x: 76, y: 104, w: 27, h: 24 },
+      { label: 'Riyadh', value: 23.6 },
+      { label: 'Jeddah', value: 18.6 },
+      { label: 'Madina', value: 17.1 },
+      { label: 'Dammam', value: 14.1 },
+      { label: 'Al Khobar', value: 2.5 },
+      { label: 'Mecca', value: 0.4 },
     ],
   },
   {
     label: 'UAE',
-    ci: 2,
-    x: 107,
-    y: 2,
-    w: 68,
-    h: 78,
+    color: cv(2),
     children: [
-      { label: 'Abu Dhabi', x: 109, y: 16, w: 32, h: 36, lines: ['Abu', 'Dhabi'] },
-      { label: 'Dubai', x: 143, y: 16, w: 30, h: 36 },
-      { label: 'Sharjah', x: 109, y: 54, w: 64, h: 24 },
+      { label: 'Abu Dhabi', value: 15.1 },
+      { label: 'Dubai', value: 12.9 },
+      { label: 'Sharjah', value: 9.3 },
     ],
   },
   {
     label: 'Oman',
-    ci: 3,
-    x: 177,
-    y: 2,
-    w: 41,
-    h: 42,
+    color: cv(3),
     children: [
-      { label: 'Muscat', x: 179, y: 16, w: 37, h: 26 },
+      { label: 'Muscat', value: 6.2 },
+      { label: 'Sohar', value: 3.4 },
     ],
   },
   {
     label: 'Kuwait',
-    ci: 4,
-    x: 177,
-    y: 46,
-    w: 41,
-    h: 47,
+    color: cv(4),
     children: [
-      { label: 'Salmiya', x: 179, y: 60, w: 18, h: 31, lines: ['Sal', 'miya'] },
-      { label: 'Kuwait City', x: 199, y: 60, w: 17, h: 31, lines: ['Kuw', 'City'] },
-    ],
-  },
-  {
-    label: 'Bahrain',
-    ci: 5,
-    x: 107,
-    y: 82,
-    w: 46,
-    h: 48,
-    children: [
-      { label: 'Manama', x: 109, y: 96, w: 42, h: 32 },
+      { label: 'Kuwait City', value: 3.3 },
+      { label: 'Salmiya', value: 2.5 },
     ],
   },
   {
     label: 'Qatar',
-    ci: 6,
-    x: 155,
-    y: 82,
-    w: 63,
-    h: 48,
+    color: cv(5),
     children: [
-      { label: 'Doha', x: 157, y: 96, w: 59, h: 32 },
+      { label: 'Doha', value: 4.7 },
+      { label: 'Lusail', value: 1.6 },
+    ],
+  },
+  {
+    label: 'Bahrain',
+    color: cv(6),
+    children: [
+      { label: 'Manama', value: 3.9 },
+      { label: 'Riffa', value: 1.3 },
     ],
   },
 ]
 
-function fontSizeFor(tile: ChildTile): number {
-  if (tile.w >= 45 && tile.h >= 24) return 7
-  if (tile.w >= 30 && tile.h >= 20) return 6.2
-  return 5.4
+function sumGroup(group: TreemapGroup): number {
+  return group.children.reduce((sum, child) => sum + Math.max(0, child.value), 0)
 }
 
-export function TreemapVisual({ showLegend = true, showDataLabels = true }: ChartVisualProps) {
+function insetRect(rect: Rect, gap: number): Rect {
+  const inset = gap / 2
+  return {
+    x: rect.x + inset,
+    y: rect.y + inset,
+    w: Math.max(0, rect.w - gap),
+    h: Math.max(0, rect.h - gap),
+  }
+}
+
+function splitIndex<T>(items: readonly T[], valueOf: (item: T) => number): number {
+  const total = items.reduce((sum, item) => sum + valueOf(item), 0)
+  let running = 0
+  let bestIndex = 1
+  let bestDelta = Number.POSITIVE_INFINITY
+
+  for (let index = 1; index < items.length; index += 1) {
+    running += valueOf(items[index - 1])
+    const delta = Math.abs(total / 2 - running)
+    if (delta < bestDelta) {
+      bestDelta = delta
+      bestIndex = index
+    }
+  }
+
+  return bestIndex
+}
+
+function binaryTreemap<T>(
+  items: readonly T[],
+  rect: Rect,
+  valueOf: (item: T) => number,
+  gap: number,
+): LayoutItem<T>[] {
+  const sorted = [...items]
+    .filter((item) => valueOf(item) > 0)
+    .sort((a, b) => valueOf(b) - valueOf(a))
+
+  if (sorted.length === 0 || rect.w <= 0 || rect.h <= 0) return []
+  if (sorted.length === 1) return [{ item: sorted[0], rect: insetRect(rect, gap) }]
+
+  const index = splitIndex(sorted, valueOf)
+  const first = sorted.slice(0, index)
+  const second = sorted.slice(index)
+  const firstValue = first.reduce((sum, item) => sum + valueOf(item), 0)
+  const total = firstValue + second.reduce((sum, item) => sum + valueOf(item), 0)
+  const ratio = total > 0 ? firstValue / total : 0.5
+
+  if (rect.w >= rect.h) {
+    const firstW = rect.w * ratio
+    return [
+      ...binaryTreemap(first, { x: rect.x, y: rect.y, w: firstW, h: rect.h }, valueOf, gap),
+      ...binaryTreemap(second, { x: rect.x + firstW, y: rect.y, w: rect.w - firstW, h: rect.h }, valueOf, gap),
+    ]
+  }
+
+  const firstH = rect.h * ratio
+  return [
+    ...binaryTreemap(first, { x: rect.x, y: rect.y, w: rect.w, h: firstH }, valueOf, gap),
+    ...binaryTreemap(second, { x: rect.x, y: rect.y + firstH, w: rect.w, h: rect.h - firstH }, valueOf, gap),
+  ]
+}
+
+function maxChars(width: number, fontSize: number): number {
+  return Math.max(2, Math.floor((width - 6) / (fontSize * 0.56)))
+}
+
+function truncate(value: string, chars: number): string {
+  return value.length > chars ? `${value.slice(0, Math.max(1, chars - 1))}...` : value
+}
+
+function childFontSize(rect: Rect): number {
+  const minSide = Math.min(rect.w, rect.h)
+  if (minSide < 17 || rect.w < 28) return 0
+  if (rect.w > 92 && rect.h > 52) return 9
+  if (rect.w > 58 && rect.h > 30) return 8
+  return 6.6
+}
+
+function renderLegendTextY(fontSize: number): number {
+  return fontSize * 0.88
+}
+
+function safeId(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+}
+
+export function TreemapVisual({
+  showLegend = true,
+  showDataLabels = true,
+  format,
+}: ChartVisualProps) {
+  const { ref, width, height } = useElementSize({ width: 420, height: 260 })
+  const idPrefix = useId().replace(/[^a-zA-Z0-9_-]/g, '')
+  const legendFontSize = format?.legend.fontSize ?? 8
+  const legendTitleFontSize = format?.legend.titleFontSize ?? legendFontSize
+  const legendTextShow = format?.legend.textShow ?? true
+  const legendTitleShow = Boolean(format?.legend.titleShow && format.legend.titleText)
+  const legendTitleHeight = legendTitleShow ? Math.max(10, legendTitleFontSize + 4) : 0
+  const legendVisible = showLegend && (legendTextShow || legendTitleShow)
+  const { innerRect } = computeContainerLayout(width, height, {
+    padding: { top: 5, right: 5, bottom: 5, left: 5 },
+  })
+  const legendItems: LegendItem[] = GROUPS.map((group) => ({ label: group.label, color: group.color }))
+  const legend = computeLegendLayout(
+    innerRect,
+    legendItems,
+    format?.legend.position ?? 'Top left',
+    legendVisible,
+    legendFontSize,
+    {
+      textVisible: legendTextShow,
+      titleVisible: legendTitleShow,
+      titleHeight: legendTitleHeight,
+      itemHeight: Math.max(10, Math.ceil(legendFontSize + 3)),
+    },
+  )
+  const plotRect = legend.plotRect
+  const groupLayouts = binaryTreemap(GROUPS, plotRect, sumGroup, 2)
+  const parentText = 'var(--theme-fg, #252423)'
+  const childText = 'var(--preview-data-label-color, rgba(255,255,255,.94))'
+  const groupStroke = format?.shape.borderShow
+    ? format.shape.borderColor
+    : 'var(--card-border, rgba(0,0,0,.14))'
+  const groupStrokeWidth = format?.shape.borderShow ? Math.max(0.6, format.shape.borderWidth) : 0.7
+  const tileStroke = 'var(--card-bg, #FFFFFF)'
+
   return (
-    <svg viewBox="0 0 220 132" width="100%" height="100%" style={{ fontFamily: AX.font }}>
-      {GROUPS.map((group) => (
-        <g key={group.label}>
-          <rect
-            x={group.x}
-            y={group.y}
-            width={group.w}
-            height={group.h}
-            rx="0"
-            fill={cv(group.ci)}
-            fillOpacity=".2"
-            stroke="var(--preview-shape-border-color, white)"
-            strokeWidth="var(--preview-shape-border-width, 2)"
-          />
-          {showDataLabels && (
-            <text x={group.x + 4} y={group.y + 9} fontSize="var(--preview-data-label-size, 7.2px)" fill="var(--preview-data-label-color, #252423)" fontWeight="700">
-              {group.label}
-            </text>
-          )}
+    <div ref={ref} style={{ width: '100%', height: '100%', minWidth: 0, minHeight: 0 }}>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        width="100%"
+        height="100%"
+        role="img"
+        aria-label="Treemap preview"
+        style={{ display: 'block', fontFamily: AX.font, overflow: 'hidden' }}
+      >
+        {groupLayouts.map(({ item: group, rect: groupRect }) => {
+          const headerH = groupRect.h >= 30 && groupRect.w >= 40 ? Math.min(14, Math.max(10, groupRect.h * 0.12)) : 0
+          const childRect = {
+            x: groupRect.x + 1.2,
+            y: groupRect.y + headerH + 1.2,
+            w: Math.max(0, groupRect.w - 2.4),
+            h: Math.max(0, groupRect.h - headerH - 2.4),
+          }
+          const childLayouts = binaryTreemap(group.children, childRect, (child) => child.value, 1.4)
+          const groupClipId = `${idPrefix}-group-${safeId(group.label)}`
 
-          {group.children.map((tile, tileIndex) => {
-            const lines = tile.lines ?? [tile.label]
-            const fontSize = fontSizeFor(tile)
-            const lineStart = tile.y + tile.h / 2 - ((lines.length - 1) * fontSize) / 2 + fontSize / 3
-
-            return (
-              <g key={tile.label}>
-                <rect
-                  x={tile.x}
-                  y={tile.y}
-                  width={tile.w}
-                  height={tile.h}
-                  rx="0"
-                  fill={cv(group.ci)}
-                  fillOpacity={`calc(var(--preview-shape-opacity, 1) * ${0.9 - tileIndex * 0.055})`}
-                  stroke="var(--preview-shape-border-color, white)"
-                  strokeWidth="var(--preview-shape-border-width, 1)"
-                />
-                {showDataLabels && tile.w > 15 && tile.h > 14 && (
-                  <text x={tile.x + tile.w / 2} y={lineStart} textAnchor="middle" fontSize={`var(--preview-data-label-size, ${fontSize}px)`} fill="var(--preview-data-label-color, white)" fontWeight="600">
-                    {lines.map((line, lineIndex) => (
-                      <tspan key={line} x={tile.x + tile.w / 2} dy={lineIndex === 0 ? 0 : fontSize + 1}>
-                        {line}
-                      </tspan>
-                    ))}
-                  </text>
-                )}
-              </g>
-            )
-          })}
-        </g>
-      ))}
-      {showLegend && (
-        <g transform="translate(137 5)">
-          <rect x="-5" y="-3" width="78" height="31" rx="1" fill="var(--card-bg, #FFFFFF)" fillOpacity=".86" />
-          {GROUPS.slice(0, 4).map((group, index) => {
-            const x = (index % 2) * 37
-            const y = Math.floor(index / 2) * 13
-            return (
-              <g key={`legend-${group.label}`} transform={`translate(${x} ${y})`}>
-                <rect width="6" height="6" y="1" fill={cv(group.ci)} />
-                <text x="9" y="6.5" fontSize="var(--preview-legend-size, 6.4px)" fill="var(--preview-legend-color, #605E5C)">
-                  {group.label}
+          return (
+            <g key={group.label}>
+              <clipPath id={groupClipId}>
+                <rect x={groupRect.x} y={groupRect.y} width={groupRect.w} height={groupRect.h} rx="1.5" />
+              </clipPath>
+              <rect
+                x={groupRect.x}
+                y={groupRect.y}
+                width={groupRect.w}
+                height={groupRect.h}
+                rx="1.5"
+                fill={group.color}
+                fillOpacity=".12"
+                stroke={groupStroke}
+                strokeWidth={groupStrokeWidth}
+              />
+              {showDataLabels && headerH > 0 && (
+                <text
+                  x={groupRect.x + 4}
+                  y={groupRect.y + Math.min(10, headerH - 2)}
+                  fontSize={Math.min(9, Math.max(6.4, headerH - 3))}
+                  fill={parentText}
+                  fontWeight="700"
+                  clipPath={`url(#${groupClipId})`}
+                >
+                  {truncate(group.label, maxChars(groupRect.w, 8))}
                 </text>
-              </g>
-            )
-          })}
-        </g>
-      )}
-    </svg>
+              )}
+
+              {childLayouts.map(({ item: child, rect: tileRect }, childIndex) => {
+                const fontSize = childFontSize(tileRect)
+                const label = truncate(child.label, maxChars(tileRect.w, fontSize || 6.4))
+                const value = `${child.value.toFixed(1).replace(/\.0$/, '')}M`
+                const tileClipId = `${idPrefix}-${safeId(group.label)}-${safeId(child.label)}`
+                const opacity = Math.max(0.42, Math.min(0.94, (format?.shape.opacity ?? 1) * (0.88 - childIndex * 0.055)))
+                const showValue = fontSize > 0 && tileRect.h > 30 && tileRect.w > 42
+
+                return (
+                  <g key={`${group.label}-${child.label}`}>
+                    <title>{`${group.label} > ${child.label}: ${value}`}</title>
+                    <clipPath id={tileClipId}>
+                      <rect x={tileRect.x} y={tileRect.y} width={tileRect.w} height={tileRect.h} rx="0.5" />
+                    </clipPath>
+                    <rect
+                      x={tileRect.x}
+                      y={tileRect.y}
+                      width={tileRect.w}
+                      height={tileRect.h}
+                      rx="0.5"
+                      fill={group.color}
+                      fillOpacity={opacity}
+                      stroke={tileStroke}
+                      strokeWidth="1"
+                    />
+                    {showDataLabels && fontSize > 0 && (
+                      <text
+                        x={tileRect.x + 4}
+                        y={tileRect.y + fontSize + 3}
+                        fontSize={fontSize}
+                        fill={childText}
+                        fontWeight="650"
+                        clipPath={`url(#${tileClipId})`}
+                      >
+                        <tspan x={tileRect.x + 4}>{label}</tspan>
+                        {showValue && (
+                          <tspan x={tileRect.x + 4} dy={fontSize + 2} fontSize={Math.max(5.8, fontSize - 1.1)} opacity=".86">
+                            {value}
+                          </tspan>
+                        )}
+                      </text>
+                    )}
+                  </g>
+                )
+              })}
+            </g>
+          )
+        })}
+
+        {showLegend && legend.visible && (
+          <g transform={`translate(${f(legend.legendRect.x)} ${f(legend.legendRect.y)})`}>
+            {legendTitleShow && (
+              <text
+                x={0}
+                y={renderLegendTextY(legendTitleFontSize)}
+                fontSize={legendTitleFontSize}
+                fill={format?.legend.titleColor ?? 'var(--preview-legend-color,#605E5C)'}
+                fontFamily={format?.legend.titleFontFamily ?? AX.font}
+                fontWeight={format?.legend.titleFontWeight ?? 700}
+                fontStyle={format?.legend.titleFontStyle ?? 'normal'}
+                textDecoration={format?.legend.titleTextDecoration ?? 'none'}
+              >
+                {format?.legend.titleText}
+              </text>
+            )}
+            {legendTextShow && legendItems.map((item, index) => {
+              const horizontal = legend.direction === 'horizontal'
+              const row = horizontal ? Math.floor(index / legend.itemsPerRow) : index
+              const col = horizontal ? index % legend.itemsPerRow : 0
+              const label = truncateLegendLabel(item.label, legend.itemWidth)
+
+              return (
+                <g
+                  key={`legend-${item.label}`}
+                  transform={`translate(${f(col * legend.itemWidth)} ${f(legendTitleHeight + row * legend.itemHeight)})`}
+                >
+                  <rect
+                    x={0}
+                    y={Math.max(1, legendFontSize * 0.16)}
+                    width={Math.max(5, legendFontSize * 0.76)}
+                    height={Math.max(5, legendFontSize * 0.76)}
+                    rx="1"
+                    fill={item.color}
+                  />
+                  <text
+                    x={legendFontSize + 2}
+                    y={renderLegendTextY(legendFontSize)}
+                    fontSize={legendFontSize}
+                    fill="var(--preview-legend-color,#605E5C)"
+                    fontFamily={format?.legend.fontFamily ?? AX.font}
+                    fontWeight={format?.legend.fontWeight ?? 400}
+                    fontStyle={format?.legend.fontStyle ?? 'normal'}
+                    textDecoration={format?.legend.textDecoration ?? 'none'}
+                  >
+                    {label}
+                  </text>
+                </g>
+              )
+            })}
+          </g>
+        )}
+      </svg>
+    </div>
   )
 }

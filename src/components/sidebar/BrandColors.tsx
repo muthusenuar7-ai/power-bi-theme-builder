@@ -8,6 +8,7 @@ interface ColorFieldProps {
   label: string
   value: string
   onChange: (hex: string) => void
+  onReset?: () => void
 }
 
 const HEX_INPUT = /^#?[0-9a-fA-F]{0,6}$/
@@ -57,7 +58,7 @@ function HexInput({ value, onChange }: HexInputProps) {
   )
 }
 
-function ColorField({ label, value, onChange }: ColorFieldProps) {
+function ColorField({ label, value, onChange, onReset }: ColorFieldProps) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
       <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-3)' }}>{label}</span>
@@ -70,6 +71,27 @@ function ColorField({ label, value, onChange }: ColorFieldProps) {
           style={{ width: 28, height: 28, padding: 0, border: '1px solid var(--border-ui)', borderRadius: 6, background: 'transparent' }}
         />
         <HexInput key={value} value={value} onChange={onChange} />
+        {onReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            title={`Reset ${label} to theme`}
+            style={{
+              height: 28,
+              border: '1px solid var(--border-ui)',
+              borderRadius: 6,
+              background: 'var(--surface)',
+              color: 'var(--text-3)',
+              fontSize: 10,
+              fontWeight: 750,
+              padding: '0 7px',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Reset
+          </button>
+        )}
       </span>
     </label>
   )
@@ -79,30 +101,62 @@ export function BrandColors() {
   const primary = useThemeStore((s) => s.primary)
   const accent = useThemeStore((s) => s.accent)
   const bg = useThemeStore((s) => s.bg)
+  const customCanvasBackground = useThemeStore((s) => s.customCanvasBackground)
+  const canvasBackgroundMode = useThemeStore((s) => s.canvasBackgroundMode)
+  const visualBackgroundMode = useThemeStore((s) => s.visualBackgroundMode)
+  const themeVisualBackground = useThemeStore((s) => s.visualBackground)
+  const themeBorderColor = useThemeStore((s) => s.borderColor)
+  const themeTitleColor = useThemeStore((s) => s.titleColor)
+  const themeLabelColor = useThemeStore((s) => s.labelColor)
   const fg = useThemeStore((s) => s.fg)
   const good = useThemeStore((s) => s.good)
   const neutral = useThemeStore((s) => s.neutral)
   const bad = useThemeStore((s) => s.bad)
   const tableAccent = useThemeStore((s) => s.tableAccent)
+  const formatProps = useThemeStore((s) => s.formatProps)
   const setPrimary = useThemeStore((s) => s.setPrimary)
   const setAccent = useThemeStore((s) => s.setAccent)
   const setBg = useThemeStore((s) => s.setBg)
+  const resetCanvasBackground = useThemeStore((s) => s.resetCanvasBackground)
+  const setVisualBackground = useThemeStore((s) => s.setVisualBackground)
+  const resetVisualBackground = useThemeStore((s) => s.resetVisualBackground)
   const setFg = useThemeStore((s) => s.setFg)
   const setGood = useThemeStore((s) => s.setGood)
   const setNeutral = useThemeStore((s) => s.setNeutral)
   const setBad = useThemeStore((s) => s.setBad)
   const setTableAccent = useThemeStore((s) => s.setTableAccent)
+  const updateGeneralFormat = useThemeStore((s) => s.updateGeneralFormat)
+
+  const effectiveCanvasBackground = canvasBackgroundMode === 'custom' && customCanvasBackground
+    ? customCanvasBackground
+    : bg
+  const visualBackground = visualBackgroundMode === 'custom' && typeof formatProps['general.background.color'] === 'string'
+    ? formatProps['general.background.color']
+    : themeVisualBackground
+  const borderColor = typeof formatProps['general.border.color'] === 'string'
+    ? formatProps['general.border.color']
+    : themeBorderColor
+  const titleColor = typeof formatProps['general.title.fontColor'] === 'string'
+    ? formatProps['general.title.fontColor']
+    : themeTitleColor
+  const labelColor = typeof formatProps['general.label.fontColor'] === 'string'
+    ? formatProps['general.label.fontColor']
+    : themeLabelColor
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-      <ColorField label="Primary" value={primary} onChange={setPrimary} />
-      <ColorField label="Accent" value={accent} onChange={setAccent} />
-      <ColorField label="Background" value={bg} onChange={setBg} />
-      <ColorField label="Foreground" value={fg} onChange={setFg} />
-      <ColorField label="Good" value={good} onChange={setGood} />
-      <ColorField label="Neutral" value={neutral} onChange={setNeutral} />
-      <ColorField label="Bad" value={bad} onChange={setBad} />
-      <ColorField label="Table accent" value={tableAccent} onChange={setTableAccent} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <ColorField label="Primary"      value={primary}     onChange={setPrimary} />
+      <ColorField label="Accent"       value={accent}      onChange={setAccent} />
+      <ColorField label="Background"   value={effectiveCanvasBackground} onChange={setBg} onReset={resetCanvasBackground} />
+      <ColorField label="Foreground"   value={fg}          onChange={setFg} />
+      <ColorField label="Visual Background" value={visualBackground} onChange={setVisualBackground} onReset={resetVisualBackground} />
+      <ColorField label="Visual Border"     value={borderColor}      onChange={(hex) => updateGeneralFormat('border.color', hex)} />
+      <ColorField label="Title Text"        value={titleColor}       onChange={(hex) => updateGeneralFormat('title.fontColor', hex)} />
+      <ColorField label="Label Text"        value={labelColor}       onChange={(hex) => updateGeneralFormat('label.fontColor', hex)} />
+      <ColorField label="Good"         value={good}        onChange={setGood} />
+      <ColorField label="Neutral"      value={neutral}     onChange={setNeutral} />
+      <ColorField label="Bad"          value={bad}         onChange={setBad} />
+      <ColorField label="Table Accent" value={tableAccent} onChange={setTableAccent} />
     </div>
   )
 }

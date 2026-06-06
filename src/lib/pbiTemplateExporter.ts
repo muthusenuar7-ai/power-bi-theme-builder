@@ -79,7 +79,9 @@ function wireframe(page: ExportedLayoutPage, pageWidth: number, pageHeight: numb
 export function generatePBITemplateHTML(state: ThemeState): string {
   const layout = generateLayoutJSON(state)
   const currentPage = layout.pages[Math.max(0, Math.min(layout.pages.length - 1, state.currentPage))]
-  const dataColors = state.dataColors.map((color) => `<span class="swatch" style="background:${escapeHtml(color)}">${escapeHtml(color)}</span>`).join('')
+  const dataColors = state.dataColors
+    .map((color) => `<span class="swatch" style="background:${escapeHtml(color)}">${escapeHtml(color)}</span>`)
+    .join('')
   const slicerRows = currentPage.slicers.map((slicer) => zoneRow(`Slicer: ${slicer.title}`, slicer.zone)).join('')
   const kpiRows = currentPage.kpiCards.map((kpi) => zoneRow(`KPI: ${kpi.lbl}`, kpi.zone)).join('')
   const chartSummary = layout.pages.map((page) => `

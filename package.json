@@ -7,11 +7,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "generate:icons": "node scripts/generate-icon-library.mjs",
+    "generate:country-flags": "node scripts/generate-country-flags.mjs",
+    "check:icons": "node scripts/generate-icon-library.mjs --check",
+    "check:themes": "node scripts/check-theme-duplicates.mjs",
+    "test:theme-export": "node scripts/test-theme-export.mjs",
     "qa:visuals": "node scripts/qa/visual-catalog-audit.mjs"
   },
   "dependencies": {
+    "@tabler/icons": "^3.44.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "flag-icons": "^7.5.0",
     "html-to-image": "^1.11.13",
     "lucide-react": "^1.14.0",
     "next": "16.2.6",

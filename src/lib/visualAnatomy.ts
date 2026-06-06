@@ -94,6 +94,7 @@ export const VISUAL_ANATOMY: Record<string, VisualAnatomy> = {
   donut: anatomy('donut', 'none', NONE_AXIS, NONE_AXIS, 'none', 'slices'),
   funnel: anatomy('funnel', 'none', NONE_AXIS, NONE_AXIS, 'none', 'funnel'),
   treemap: anatomy('treemap', 'none', NONE_AXIS, NONE_AXIS, 'none', 'tiles'),
+  ribbon: anatomy('ribbon', 'vertical', CATEGORY_MONTH, VALUE_SALES, 'horizontal', 'columns'),
 }
 
 export const FALLBACK_VISUAL_ANATOMY = HORIZONTAL_BAR

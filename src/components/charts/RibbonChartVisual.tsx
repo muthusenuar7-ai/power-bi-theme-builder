@@ -1,4 +1,16 @@
-import { AX, cv } from './chartUtils'
+import {
+  AX,
+  axisLabelTextProps,
+  axisLabelVisible,
+  axisLine,
+  axisTitle,
+  axisTitleTextProps,
+  cv,
+  dataLabelTextProps,
+  gridOpacity,
+  legendTextProps,
+} from './chartUtils'
+import type { ChartVisualProps } from './ChartRenderer'
 
 const PERIODS = [
   '2015 Qtr 1',
@@ -86,23 +98,44 @@ function periodLabelParts(label: string): [string, string] {
   return [year, `Qtr ${quarter}`]
 }
 
-export function RibbonChartVisual() {
+export function RibbonChartVisual({ showLegend = true, showDataLabels = true, format }: ChartVisualProps) {
+  const showXAxis = axisLabelVisible(format?.xAxis)
+  const xTitle = axisTitle(format?.xAxis)
+  const yTitle = axisTitle(format?.yAxis)
+  const legendTitleVisible = Boolean(showLegend && format?.legend.titleShow && format.legend.titleText)
+  const legendTextVisible = showLegend && (format?.legend.textShow ?? true)
+
   return (
     <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} width="100%" height="100%" style={{ fontFamily: AX.font, overflow: 'visible' }}>
-      {MANAGERS.slice(0, 4).map((manager, i) => (
-        <g key={manager.label} transform={`translate(${16 + i * 54}, 7)`}>
+      {legendTitleVisible && (
+        <text
+          x="15"
+          y="8"
+          fontSize={format?.legend.titleFontSize ?? 7}
+          fill={format?.legend.titleColor ?? '#605E5C'}
+          fontFamily={format?.legend.titleFontFamily ?? "var(--preview-font-family, 'Segoe UI', sans-serif)"}
+          fontWeight={format?.legend.titleFontWeight ?? 700}
+          fontStyle={format?.legend.titleFontStyle ?? 'normal'}
+          textDecoration={format?.legend.titleTextDecoration ?? 'none'}
+        >
+          {format?.legend.titleText}
+        </text>
+      )}
+      {legendTextVisible && MANAGERS.slice(0, 4).map((manager, i) => (
+        <g key={manager.label} transform={`translate(${legendTitleVisible ? 58 + i * 45 : 16 + i * 54}, 7)`}>
           <rect width="7" height="7" fill={manager.color} />
-          <text x="10" y="6.7" fontSize="7" fill={AX.label}>{manager.label}</text>
+          <text x="10" y="6.7" {...legendTextProps('7px')}>{manager.label}</text>
         </g>
       ))}
-      {MANAGERS.slice(4).map((manager, i) => (
+      {legendTextVisible && MANAGERS.slice(4).map((manager, i) => (
         <g key={manager.label} transform={`translate(${16 + i * 62}, 18)`}>
           <rect width="7" height="7" fill={manager.color} />
-          <text x="10" y="6.7" fontSize="7" fill={AX.label}>{manager.label}</text>
+          <text x="10" y="6.7" {...legendTextProps('7px')}>{manager.label}</text>
         </g>
       ))}
 
-      <line x1={Lx} y1={Ly + Lh} x2={Lx + Lw} y2={Ly + Lh} stroke={AX.line} strokeWidth=".7" />
+      <rect x={Lx} y={Ly} width={Lw} height={Lh} fill="var(--preview-plot-bg, transparent)" fillOpacity="var(--preview-plot-bg-opacity, 0)" />
+      <line x1={Lx} y1={Ly + Lh} x2={Lx + Lw} y2={Ly + Lh} stroke={axisLine(format?.xAxis)} strokeWidth=".7" />
 
       {MANAGERS.map((manager) =>
         PERIODS.slice(0, -1).map((_, periodIndex) => (
@@ -134,24 +167,30 @@ export function RibbonChartVisual() {
                     stroke="white"
                     strokeWidth=".35"
                   />
-                  {height >= 8.2 && segment.value >= 3.2 && (
-                    <text x={x + colW / 2} y={segment.y0 + height / 2 + 2.2} textAnchor="middle" fontSize="5.4" fill="white" fontWeight="600">
+                  {showDataLabels && height >= 8.2 && segment.value >= 3.2 && (
+                    <text x={x + colW / 2} y={segment.y0 + height / 2 + 2.2} textAnchor="middle" {...dataLabelTextProps('white', '5.4px')}>
                       {segment.value.toFixed(1)}M
                     </text>
                   )}
                 </g>
               )
             })}
-            <line x1={x + colW / 2} y1={Ly} x2={x + colW / 2} y2={Ly + Lh} stroke={AX.grid} strokeWidth=".35" />
-            <text x={x + colW / 2} y={Ly + Lh + 11} textAnchor="middle" fontSize="6.3" fill={AX.label}>
-              {periodLabelParts(PERIODS[periodIndex])[0]}
-            </text>
-            <text x={x + colW / 2} y={Ly + Lh + 19} textAnchor="middle" fontSize="6.3" fill={AX.label}>
-              {periodLabelParts(PERIODS[periodIndex])[1]}
-            </text>
+            <line x1={x + colW / 2} y1={Ly} x2={x + colW / 2} y2={Ly + Lh} stroke={format?.gridlines.show === false ? 'transparent' : AX.grid} strokeWidth="var(--preview-gridline-width, .35)" strokeDasharray="var(--preview-gridline-dasharray, 0)" strokeOpacity={gridOpacity()} />
+            {showXAxis && (
+              <>
+                <text x={x + colW / 2} y={Ly + Lh + 11} textAnchor="middle" {...axisLabelTextProps('x', '6.3px')}>
+                  {periodLabelParts(PERIODS[periodIndex])[0]}
+                </text>
+                <text x={x + colW / 2} y={Ly + Lh + 19} textAnchor="middle" {...axisLabelTextProps('x', '6.3px')}>
+                  {periodLabelParts(PERIODS[periodIndex])[1]}
+                </text>
+              </>
+            )}
           </g>
         )
       })}
+      {xTitle && <text x={Lx + Lw / 2} y={137} textAnchor="middle" {...axisTitleTextProps('x', '7.5px')}>{xTitle}</text>}
+      {yTitle && <text transform={`translate(7 ${Ly + Lh / 2}) rotate(-90)`} textAnchor="middle" {...axisTitleTextProps('y', '7.5px')}>{yTitle}</text>}
     </svg>
   )
 }

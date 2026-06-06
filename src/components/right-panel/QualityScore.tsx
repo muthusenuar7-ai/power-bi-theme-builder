@@ -18,15 +18,16 @@ export function QualityScore() {
   const dataColors = useThemeStore((s) => s.dataColors)
   const bg = useThemeStore((s) => s.bg)
   const fg = useThemeStore((s) => s.fg)
-  const overall = calculateQualityScore(dataColors, bg, fg)
+  const activeColors = dataColors.length ? dataColors : ['#0D9488']
+  const overall = calculateQualityScore(activeColors, bg, fg)
   const contrastRatio = getContrastRatio(fg, bg)
-  const readableColors = dataColors.filter((color) => meetsWCAG_AA(color, bg)).length
-  const uniqueColors = new Set(dataColors.map((color) => color.toUpperCase())).size
+  const readableColors = activeColors.filter((color) => meetsWCAG_AA(color, bg)).length
+  const uniqueColors = new Set(activeColors.map((color) => color.toUpperCase())).size
 
   const metrics: Metric[] = [
     { label: 'Contrast', score: Math.min(100, Math.round((contrastRatio / 7) * 100)) },
-    { label: 'Readability', score: Math.round((readableColors / Math.max(1, dataColors.length)) * 100) },
-    { label: 'Consistency', score: Math.round((uniqueColors / Math.max(1, dataColors.length)) * 100) },
+    { label: 'Readability', score: Math.round((readableColors / Math.max(1, activeColors.length)) * 100) },
+    { label: 'Consistency', score: Math.round((uniqueColors / Math.max(1, activeColors.length)) * 100) },
     { label: 'Accessibility', score: Math.min(100, Math.round((contrastRatio / 4.5) * 82)) },
   ]
 

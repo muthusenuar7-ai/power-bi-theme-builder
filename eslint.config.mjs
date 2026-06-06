@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     ".claude/**",
     ".agents/**",
     ".codex/**",
+    "sample.Report/**",
+    "sample.SemanticModel/**",
     "next-env.d.ts",
     // Reference docs are not part of the app source
     "docs/**",

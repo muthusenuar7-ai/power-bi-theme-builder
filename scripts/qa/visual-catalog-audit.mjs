@@ -94,8 +94,23 @@ function parseCatalog() {
 function parseRendererRegistry() {
   const source = read(files.renderer)
   const start = source.indexOf('const REGISTRY')
-  const end = source.indexOf('function GenericFallback', start)
-  const body = start >= 0 && end >= 0 ? source.slice(start, end) : ''
+  const bodyStart = start >= 0 ? source.indexOf('{', start) : -1
+  let bodyEnd = -1
+  if (bodyStart >= 0) {
+    let depth = 0
+    for (let index = bodyStart; index < source.length; index += 1) {
+      const char = source[index]
+      if (char === '{') depth += 1
+      if (char === '}') {
+        depth -= 1
+        if (depth === 0) {
+          bodyEnd = index
+          break
+        }
+      }
+    }
+  }
+  const body = bodyStart >= 0 && bodyEnd >= 0 ? source.slice(bodyStart, bodyEnd + 1) : ''
   const entries = [...body.matchAll(/^\s*([A-Za-z0-9_]+):\s*([A-Za-z0-9_]+),/gm)]
   return entries.map((match) => ({ id: match[1], component: match[2] }))
 }

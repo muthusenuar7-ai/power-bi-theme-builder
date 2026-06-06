@@ -40,12 +40,13 @@ function fmtPrice(n: number): string {
 export function TableVisual() {
   const grid = '#EDEBE9'
   const headerLine = '#C8C6C4'
+  const previewFont = 'var(--preview-font-family, "Segoe UI", sans-serif)'
 
   const base: CSSProperties = {
     padding: '4px 7px',
-    fontSize: 10,
+    fontSize: 'var(--preview-label-size, 10px)',
     borderBottom: `1px solid ${grid}`,
-    fontFamily: "'Segoe UI', sans-serif",
+    fontFamily: previewFont,
     whiteSpace: 'nowrap',
     lineHeight: 1.35,
     color: '#252423',
@@ -62,7 +63,7 @@ export function TableVisual() {
     color: '#252423',
     fontWeight: 700,
     textAlign: 'left',
-    fontSize: 9.5,
+    fontSize: 'var(--preview-header-size, 9.5px)',
   }
 
   return (
@@ -72,7 +73,7 @@ export function TableVisual() {
         height: '100%',
         overflow: 'auto',
         background: 'var(--card-bg, #FFFFFF)',
-        fontFamily: "'Segoe UI', sans-serif",
+        fontFamily: previewFont,
       }}
     >
       <table

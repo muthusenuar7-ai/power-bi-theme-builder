@@ -63,12 +63,13 @@ export function MatrixVisual() {
   const grid = '#EDEBE9'
   const headerLine = '#C8C6C4'
   const yearDivider = '2px solid #D8D5D0'
+  const previewFont = 'var(--preview-font-family, "Segoe UI", sans-serif)'
 
   const base: CSSProperties = {
     padding: '3px 7px',
-    fontSize: 9.6,
+    fontSize: 'var(--preview-label-size, 9.6px)',
     borderBottom: `1px solid ${grid}`,
-    fontFamily: "'Segoe UI', sans-serif",
+    fontFamily: previewFont,
     whiteSpace: 'nowrap',
     lineHeight: 1.35,
     color: '#252423',
@@ -84,6 +85,7 @@ export function MatrixVisual() {
     borderBottom: `1px solid ${headerLine}`,
     textAlign: 'center',
     fontWeight: 700,
+    fontSize: 'var(--preview-header-size, 9.6px)',
   }
   const measureHeader: CSSProperties = {
     ...base,
@@ -91,7 +93,7 @@ export function MatrixVisual() {
     borderBottom: `1px solid ${headerLine}`,
     textAlign: 'right',
     fontWeight: 700,
-    fontSize: 9.2,
+    fontSize: 'var(--preview-header-size, 9.2px)',
   }
 
   return (
@@ -101,7 +103,7 @@ export function MatrixVisual() {
         height: '100%',
         overflow: 'auto',
         background: 'var(--card-bg, #FFFFFF)',
-        fontFamily: "'Segoe UI', sans-serif",
+        fontFamily: previewFont,
       }}
     >
       <table

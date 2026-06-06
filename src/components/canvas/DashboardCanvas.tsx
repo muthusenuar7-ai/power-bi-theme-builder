@@ -1,161 +1,221 @@
 'use client'
 
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useMemo } from 'react'
 import { useThemeStore } from '@/store/themeStore'
 import { PAGE_SIZES } from '@/lib/pageSizes'
-import { CHART_POOL } from '@/lib/chartPool'
-import { getRelativeLuminance } from '@/lib/colorUtils'
-import { DashboardLayout } from './DashboardLayout'
+import { getDashboardThemeCssVars, resolveDashboardTheme } from '@/lib/dashboardThemeResolver'
+import { ThemeDashboardCanvas } from '@/components/dashboard-preview/ThemeDashboardCanvas'
+import { ThemeDashboardPreview } from '@/components/dashboard-preview/ThemeDashboardPreview'
+import { ThemeAuditPanel } from '@/components/dashboard-preview/ThemeAuditPanel'
 import { FocusView } from './FocusView'
-import { PageNavigator } from './PageNavigator'
+
+/**
+ * DashboardCanvas — the report surface host.
+ *
+ * It resolves the single source-of-truth DashboardTheme from the store, applies
+ * the derived CSS variables to its subtree, and renders one scaled 16:9 paper
+ * (ThemeDashboardCanvas) containing either the focused Visual (Visuals section)
+ * or the fully theme-driven ThemeDashboardPreview.
+ *
+ * Background layering (Power BI Desktop model):
+ *   • Outer editor surround + dotted "desk" — a FIXED neutral, NOT theme-driven.
+ *     This is the editor chrome behind the report; it must stay constant so the
+ *     report paper visibly sits "on a desk" and the theme effect reads clearly
+ *     (a dark report on a light desk, etc.).
+ *   • Report paper (canvasBackground) and every visual/card (visualBackground)
+ *     ARE theme-driven — those are the only surfaces that follow the theme.
+ */
+const EDITOR_SURROUND_BG = '#E8EDF2'
+const EDITOR_SURROUND_DOT = '#CBD5E1'
+
+/**
+ * Bar/Column families. When one of these variants is focused, a compact tab
+ * strip is shown at the top of the canvas preview so the user can switch
+ * between variants without leaving the focused view.
+ */
+interface VariantTab {
+  id: string
+  label: string
+}
+const VARIANT_FAMILIES: VariantTab[][] = [
+  [
+    { id: 'bar', label: 'Bar' },
+    { id: 'stackedbar', label: 'Stacked Bar' },
+    { id: 'clusteredbar', label: 'Clustered Bar' },
+    { id: 'hundredstackedbar', label: '100% Bar' },
+  ],
+  [
+    { id: 'column', label: 'Column' },
+    { id: 'stackedcol', label: 'Stacked Column' },
+    { id: 'clusteredcol', label: 'Clustered Column' },
+    { id: 'hundredstackedcol', label: '100% Column' },
+  ],
+]
+
+function findVariantFamily(visualId: string | null): VariantTab[] | null {
+  if (!visualId) return null
+  return VARIANT_FAMILIES.find((family) => family.some((variant) => variant.id === visualId)) ?? null
+}
 
 export function DashboardCanvas() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const canvasRef    = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(1)
-
-  const bg           = useThemeStore((s) => s.bg)
-  const fg           = useThemeStore((s) => s.fg)
-  const primary      = useThemeStore((s) => s.primary)
-  const accent       = useThemeStore((s) => s.accent)
-  const dataColors   = useThemeStore((s) => s.dataColors)
-  const spacing      = useThemeStore((s) => s.spacing)
-  const pageSize     = useThemeStore((s) => s.pageSize)
-  const zoom         = useThemeStore((s) => s.zoom)
-  const focusVisual  = useThemeStore((s) => s.focusVisual)
-  const currentPage  = useThemeStore((s) => s.currentPage)
-  const layout       = useThemeStore((s) => s.layout)
+  const bg = useThemeStore((s) => s.bg)
+  const customCanvasBackground = useThemeStore((s) => s.customCanvasBackground)
+  const visualBackground = useThemeStore((s) => s.visualBackground)
+  const cardBackground = useThemeStore((s) => s.cardBackground)
+  const borderColor = useThemeStore((s) => s.borderColor)
+  const titleColor = useThemeStore((s) => s.titleColor)
+  const labelColor = useThemeStore((s) => s.labelColor)
+  const canvasBackgroundMode = useThemeStore((s) => s.canvasBackgroundMode)
+  const visualBackgroundMode = useThemeStore((s) => s.visualBackgroundMode)
+  const fg = useThemeStore((s) => s.fg)
+  const good = useThemeStore((s) => s.good)
+  const neutral = useThemeStore((s) => s.neutral)
+  const bad = useThemeStore((s) => s.bad)
+  const tableAccent = useThemeStore((s) => s.tableAccent)
+  const gridlineColor = useThemeStore((s) => s.gridlineColor)
+  const dividerColor = useThemeStore((s) => s.dividerColor)
+  const highlight = useThemeStore((s) => s.highlight)
+  const tooltipBackground = useThemeStore((s) => s.tooltipBackground)
+  const tableHeaderBackground = useThemeStore((s) => s.tableHeaderBackground)
+  const tableRowAlt = useThemeStore((s) => s.tableRowAlt)
+  const primary = useThemeStore((s) => s.primary)
+  const accent = useThemeStore((s) => s.accent)
+  const dataColors = useThemeStore((s) => s.dataColors)
+  const paletteSize = useThemeStore((s) => s.paletteSize)
+  const spacing = useThemeStore((s) => s.spacing)
+  const pageSize = useThemeStore((s) => s.pageSize)
+  const zoom = useThemeStore((s) => s.zoom)
+  const focusVisual = useThemeStore((s) => s.focusVisual)
   const setFocusVisual = useThemeStore((s) => s.setFocusVisual)
+  const setSelectedVisual = useThemeStore((s) => s.setSelectedVisual)
+  const formatProps = useThemeStore((s) => s.formatProps)
+
+  const variantFamily = findVariantFamily(focusVisual)
+  const selectVariant = (id: string) => {
+    setFocusVisual(id)
+    setSelectedVisual(id)
+  }
+
+  const dashboardTheme = useMemo(
+    () =>
+      resolveDashboardTheme({
+        dataColors,
+        paletteSize,
+        primary,
+        accent,
+        bg,
+        customCanvasBackground,
+        visualBackground,
+        cardBackground,
+        borderColor,
+        titleColor,
+        labelColor,
+        canvasBackgroundMode,
+        visualBackgroundMode,
+        fg,
+        good,
+        neutral,
+        bad,
+        tableAccent,
+        gridlineColor,
+        dividerColor,
+        highlight,
+        tooltipBackground,
+        tableHeaderBackground,
+        tableRowAlt,
+        formatProps,
+      }),
+    [dataColors, paletteSize, primary, accent, bg, customCanvasBackground, visualBackground, cardBackground, borderColor, titleColor, labelColor, canvasBackgroundMode, visualBackgroundMode, fg, good, neutral, bad, tableAccent, gridlineColor, dividerColor, highlight, tooltipBackground, tableHeaderBackground, tableRowAlt, formatProps],
+  )
+  const dashboardVars = useMemo(() => getDashboardThemeCssVars(dashboardTheme), [dashboardTheme])
 
   const sz = PAGE_SIZES[pageSize] ?? PAGE_SIZES['16:9']
 
-  // Apply canvas-scoped CSS custom properties for PBI theming
-  useEffect(() => {
-    const el = canvasRef.current
-    if (!el) return
-    const lum   = getRelativeLuminance(bg)
-    const isDark = lum < 0.18
-    const cardBg     = isDark ? '#1F2937' : '#FFFFFF'
-    const cardBorder = isDark ? 'rgba(255,255,255,.1)' : '#E4E4E4'
-    const fgMuted    = isDark ? '#94A3B8' : '#605E5C'
-
-    const vars: Record<string, string> = {
-      '--canvas-bg':     bg,
-      '--theme-fg':      fg,
-      '--theme-fg-muted': fgMuted,
-      '--theme-primary': primary,
-      '--theme-accent':  accent,
-      '--card-bg':       cardBg,
-      '--card-border':   cardBorder,
-      '--card-radius':   '6px',
-      '--card-shadow':   isDark ? 'none' : '0 1px 3px rgba(0,0,0,.06)',
-      '--gap':           `${spacing}px`,
-      '--card-pad':      `${Math.max(8, spacing)}px`,
-    }
-    Object.entries(vars).forEach(([k, v]) => el.style.setProperty(k, v))
-    dataColors.forEach((c, i) => el.style.setProperty(`--c${i + 1}`, c))
-  }, [bg, fg, primary, accent, dataColors, spacing])
-
-  const recalcScale = useCallback(() => {
-    const container = containerRef.current
-    if (!container) return
-    if (zoom === 'fit') {
-      const w = container.clientWidth  - 48
-      const h = container.clientHeight - 48
-      setScale(Math.min(w / sz.w, h / sz.h, 1))
-    } else {
-      setScale(zoom)
-    }
-  }, [zoom, sz.w, sz.h])
-
-  useEffect(() => {
-    recalcScale()
-    const obs = new ResizeObserver(recalcScale)
-    const el  = containerRef.current
-    if (el) obs.observe(el)
-    return () => obs.disconnect()
-  }, [recalcScale])
-
-  const focusChart = focusVisual ? CHART_POOL.find((c) => c.id === focusVisual) : null
-
-  // Collapse excess layout space created by CSS scale (which doesn't affect flow)
-  const scaledW = sz.w * scale
-  const scaledH = sz.h * scale
-
   return (
-    /* Scrollable workspace */
     <div
-      ref={containerRef}
       style={{
-        flex: 1, overflow: 'auto', minHeight: 0,
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', gap: 12,
-        padding: 24, background: '#F1F5F9',
+        ...dashboardVars,
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        minHeight: 0,
+        // Fixed editor surround — intentionally NOT theme-driven (see header note).
+        background: EDITOR_SURROUND_BG,
       }}
     >
-      {/* Canvas stage — sized to the scaled dimensions so scrollbar is accurate */}
-      <div style={{ position: 'relative', width: scaledW, height: scaledH, flexShrink: 0 }}>
-        {/* PBI report canvas — full resolution, scaled via transform */}
-        <div
-          ref={canvasRef}
-          id="pbi-report-canvas"
-          data-export-canvas="report"
-          style={{
-            width:  sz.w,
-            height: sz.h,
-            transform: `scale(${scale})`,
-            transformOrigin: 'top left',
-            position: 'absolute', top: 0, left: 0,
-            background: bg,
-            borderRadius: 4,
-            boxShadow: '0 12px 36px rgba(15,23,42,.12), 0 2px 6px rgba(15,23,42,.06)',
-            overflow: 'hidden',
-            fontFamily: "'Segoe UI', sans-serif",
-          }}
+      {variantFamily && (
+        <div className="canvas-variant-tabs" role="tablist" aria-label="Chart variant">
+          {variantFamily.map((variant) => (
+            <button
+              key={variant.id}
+              type="button"
+              role="tab"
+              aria-selected={focusVisual === variant.id}
+              data-active={focusVisual === variant.id}
+              className="canvas-variant-tab"
+              title={variant.label}
+              onClick={() => selectVariant(variant.id)}
+            >
+              {variant.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div
+        className="canvas-workspace"
+        style={{
+          position: 'relative',
+          // Fixed neutral "desk" + dot grid; the report paper on top is themed.
+          backgroundColor: EDITOR_SURROUND_BG,
+          backgroundImage: `radial-gradient(circle, ${EDITOR_SURROUND_DOT} 1px, transparent 1px)`,
+        }}
+      >
+        <ThemeDashboardCanvas
+          width={sz.w}
+          height={sz.h}
+          zoom={zoom}
+          background={dashboardTheme.canvasBackground}
+          shadow={dashboardTheme.canvasShadow}
         >
           {focusVisual ? (
-            <FocusView chartId={focusVisual} />
+            <FocusView chartId={focusVisual} theme={dashboardTheme} />
           ) : (
-            <DashboardLayout
-              currentPage={currentPage}
-              layout={layout}
-              dataColors={dataColors}
-            />
+            <ThemeDashboardPreview theme={dashboardTheme} spacing={spacing} />
           )}
+        </ThemeDashboardCanvas>
 
-          {/* Canvas info badge (top-right) */}
-          <div style={{
-            position: 'absolute', top: 8, right: 8, zIndex: 10,
-            background: 'rgba(0,0,0,.38)', color: '#fff',
-            fontSize: 10, padding: '3px 8px', borderRadius: 999,
-            fontFamily: 'monospace', letterSpacing: '.04em',
-            display: 'flex', alignItems: 'center', gap: 6,
-            pointerEvents: 'none',
-          }}>
-            <span>{focusChart ? focusChart.sub : 'Dashboard'}</span>
-            <span style={{ opacity: .7 }}>{sz.w}×{sz.h}</span>
-          </div>
+        {focusVisual && (
+          <button
+            type="button"
+            onClick={() => setFocusVisual(null)}
+            style={{
+              position: 'absolute',
+              top: 16,
+              left: 16,
+              zIndex: 10,
+              background: dashboardTheme.chipActiveBackground,
+              color: dashboardTheme.chipActiveText,
+              fontSize: 11,
+              padding: '5px 12px',
+              borderRadius: 999,
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              fontWeight: 600,
+              fontFamily: 'inherit',
+            }}
+          >
+            ← Back
+          </button>
+        )}
 
-          {/* Exit focus (top-left) */}
-          {focusVisual && (
-            <button
-              onClick={() => setFocusVisual(null)}
-              style={{
-                position: 'absolute', top: 10, left: 10, zIndex: 10,
-                background: 'rgba(15,23,42,.8)', color: '#fff',
-                fontSize: 11, padding: '5px 11px', borderRadius: 999,
-                border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 5,
-                fontWeight: 500, fontFamily: 'inherit',
-              }}
-            >
-              ← Dashboard
-            </button>
-          )}
-        </div>
+        {/* DEV-ONLY theme property audit. Statically removed from prod builds. */}
+        {process.env.NODE_ENV === 'development' && <ThemeAuditPanel />}
       </div>
-
-      <PageNavigator />
     </div>
   )
 }

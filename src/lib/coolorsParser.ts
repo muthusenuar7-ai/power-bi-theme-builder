@@ -8,7 +8,7 @@ export function parseCoolorsUrl(url: string): string[] {
       .split('-')
       .filter((s) => /^[0-9a-fA-F]{6}$/.test(s))
       .map((s) => '#' + s.toLowerCase())
-      .slice(0, 8)
+      .slice(0, 10)
   } catch {
     return []
   }
@@ -21,7 +21,7 @@ export function parseCoolorsFile(text: string): string[] {
   while ((m = hexPattern.exec(text)) !== null) {
     const hex = sanitizeHex(m[1])
     if (!found.includes(hex)) found.push(hex)
-    if (found.length >= 8) break
+    if (found.length >= 10) break
   }
   return found
 }

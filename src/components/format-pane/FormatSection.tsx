@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { PropertyRow } from './PropertyRow'
 import { ToggleControl } from './controls/ToggleControl'
+import { resolveEffectiveFormat } from '@/lib/effectiveFormatResolver'
 import { useThemeStore } from '@/store/themeStore'
 import type {
   FormatControlValue,
@@ -64,8 +65,88 @@ export function FormatSection({ schema, section }: FormatSectionProps) {
   const [open, setOpen] = useState(section.defaultOpen ?? false)
   const formatProps = useThemeStore((s) => s.formatProps)
   const setProp = useThemeStore((s) => s.setProp)
+  const resetGeneralSection = useThemeStore((s) => s.resetGeneralSection)
+  // Effective theme colours — shown in the General tab when the user has NOT
+  // set an explicit override, so the panel reflects the inherited theme value
+  // (e.g. the visual background follows the selected preset) instead of a flat
+  // white/default swatch. These are read-only fallbacks; editing a control
+  // still writes an explicit override via setProp.
+  const themeVisualBackground = useThemeStore((s) => s.visualBackground)
+  const themeCardBackground = useThemeStore((s) => s.cardBackground)
+  const dataColors = useThemeStore((s) => s.dataColors)
+  const paletteSize = useThemeStore((s) => s.paletteSize)
+  const bg = useThemeStore((s) => s.bg)
+  const customCanvasBackground = useThemeStore((s) => s.customCanvasBackground)
+  const canvasBackgroundMode = useThemeStore((s) => s.canvasBackgroundMode)
+  const themeBorderColor = useThemeStore((s) => s.borderColor)
+  const themeTitleColor = useThemeStore((s) => s.titleColor)
+  const themeLabelColor = useThemeStore((s) => s.labelColor)
+  const visualBackgroundMode = useThemeStore((s) => s.visualBackgroundMode)
+  const fg = useThemeStore((s) => s.fg)
+  const primary = useThemeStore((s) => s.primary)
+  const accent = useThemeStore((s) => s.accent)
+  const good = useThemeStore((s) => s.good)
+  const neutral = useThemeStore((s) => s.neutral)
+  const bad = useThemeStore((s) => s.bad)
+  const tableAccent = useThemeStore((s) => s.tableAccent)
+  const gridlineColor = useThemeStore((s) => s.gridlineColor)
+  const dividerColor = useThemeStore((s) => s.dividerColor)
+  const highlight = useThemeStore((s) => s.highlight)
+  const tooltipBackground = useThemeStore((s) => s.tooltipBackground)
+  const tableHeaderBackground = useThemeStore((s) => s.tableHeaderBackground)
+  const tableRowAlt = useThemeStore((s) => s.tableRowAlt)
 
-  const getValue = (key: string, fallback: FormatControlValue): FormatControlValue => formatProps[key] ?? fallback
+  const effectiveVisual = resolveEffectiveFormat({
+    dataColors,
+    paletteSize,
+    fg,
+    bg,
+    customCanvasBackground,
+    visualBackground: themeVisualBackground,
+    cardBackground: themeCardBackground,
+    borderColor: themeBorderColor,
+    titleColor: themeTitleColor,
+    labelColor: themeLabelColor,
+    tableAccent,
+    gridlineColor,
+    dividerColor,
+    highlight,
+    tooltipBackground,
+    tableHeaderBackground,
+    tableRowAlt,
+    primary,
+    accent,
+    good,
+    neutral,
+    bad,
+    canvasBackgroundMode,
+    visualBackgroundMode,
+    formatProps,
+  })
+
+  const effectiveThemeFallbacks: Record<string, FormatControlValue> =
+    schema.stateScope === 'general'
+      ? {
+          'general.background.color': effectiveVisual.visualBackgroundColor,
+          'general.title.background': effectiveVisual.titleBackgroundColor,
+          'general.border.color': effectiveVisual.borderColor,
+          'general.title.fontColor': effectiveVisual.titleColor,
+          'general.subtitle.fontColor': effectiveVisual.subtitleColor,
+          'general.title.subtitle.fontColor': effectiveVisual.subtitleColor,
+          'general.label.fontColor': effectiveVisual.labelColor,
+          'general.title.divider.color': effectiveVisual.dividerColor,
+        }
+      : {}
+
+  const getValue = (key: string, fallback: FormatControlValue): FormatControlValue => {
+    const inherited = effectiveThemeFallbacks[key] ?? fallback
+    const stored = formatProps[key]
+
+    if (key === 'general.background.color' && visualBackgroundMode === 'theme') return inherited
+    if (key === 'general.title.background' && stored === '#FFFFFF') return inherited
+
+    return stored ?? inherited
+  }
   const setValue = (key: string, value: FormatControlValue) => setProp(key, value)
 
   const renderToggle = (toggle: FormatToggleRef, card: VisualFormatCard | null = null) => {
@@ -73,17 +154,28 @@ export function FormatSection({ schema, section }: FormatSectionProps) {
     const value = formatBoolean(formatProps[key], toggle.defaultValue)
 
     return (
-      <span onClick={(event) => event.stopPropagation()}>
-        <ToggleControl
-          value={value}
-          disabled={section.disabled || card?.disabled || toggle.disabled}
-          onChange={(next) => setProp(key, next)}
-        />
-      </span>
+      <ToggleControl
+        value={value}
+        disabled={section.disabled || card?.disabled || toggle.disabled}
+        onChange={(next) => setProp(key, next)}
+      />
     )
   }
 
   function resetSection() {
+    if (schema.stateScope === 'general' && section.id === 'title') {
+      resetGeneralSection('title')
+      resetGeneralSection('subtitle')
+      return
+    }
+
+    if (schema.stateScope === 'general' && section.id === 'effects') {
+      resetGeneralSection('background')
+      resetGeneralSection('border')
+      resetGeneralSection('shadow')
+      return
+    }
+
     if (section.toggle) {
       setProp(toggleKey(schema, section, null, section.toggle), section.toggle.defaultValue)
     }
@@ -101,34 +193,50 @@ export function FormatSection({ schema, section }: FormatSectionProps) {
 
   return (
     <div style={{ borderBottom: '1px solid var(--border-ui)' }}>
-      <button
-        type="button"
-        onClick={() => setOpen((current) => !current)}
+      {/* Section header — flex row; expand-button and toggle are siblings, never nested */}
+      <div
         style={{
-          width: '100%',
-          minHeight: 36,
-          border: 'none',
-          background: 'var(--surface)',
           display: 'flex',
           alignItems: 'center',
-          gap: 7,
-          padding: '0 14px',
-          color: section.disabled ? 'var(--text-3)' : 'var(--text-2)',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
+          minHeight: 36,
+          background: 'var(--surface)',
         }}
       >
-        <ChevronDown
-          size={13}
-          strokeWidth={2}
-          style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform .15s ease', color: 'var(--text-3)' }}
-        />
-        <span style={{ flex: 1, textAlign: 'left', fontSize: 11, fontWeight: 800 }}>
-          {section.title}
-          {section.warning && <span style={{ marginLeft: 5, color: '#A16207' }}>!</span>}
-        </span>
-        {section.toggle && renderToggle(section.toggle)}
-      </button>
+        <button
+          type="button"
+          onClick={() => setOpen((current) => !current)}
+          style={{
+            flex: 1,
+            minHeight: 36,
+            border: 'none',
+            background: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 7,
+            padding: '0 14px',
+            paddingRight: section.toggle ? 4 : 14,
+            color: section.disabled ? 'var(--text-3)' : 'var(--text-2)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            textAlign: 'left',
+          }}
+        >
+          <ChevronDown
+            size={13}
+            strokeWidth={2}
+            style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform .15s ease', color: 'var(--text-3)', flexShrink: 0 }}
+          />
+          <span style={{ flex: 1, textAlign: 'left', fontSize: 11, fontWeight: 800 }}>
+            {section.title}
+            {section.warning && <span style={{ marginLeft: 5, color: '#A16207' }}>!</span>}
+          </span>
+        </button>
+        {section.toggle && (
+          <span style={{ paddingRight: 14, display: 'flex', alignItems: 'center' }}>
+            {renderToggle(section.toggle)}
+          </span>
+        )}
+      </div>
 
       {open && (
         <div style={{ padding: '4px 10px 10px' }}>
@@ -164,6 +272,12 @@ export function FormatSection({ schema, section }: FormatSectionProps) {
 
               {formatCard.note && (
                 <div style={{ marginBottom: 6, fontSize: 10.4, color: 'var(--text-3)', lineHeight: 1.45 }}>{formatCard.note}</div>
+              )}
+
+              {schema.stateScope === 'general' && formatCard.id === 'background' && (
+                <div style={{ marginBottom: 6, fontSize: 9.8, fontWeight: 750, color: 'var(--text-3)', letterSpacing: '.05em', textTransform: 'uppercase' }}>
+                  Source: {effectiveVisual.source.visualBackground === 'custom' ? 'Custom' : 'Theme'}
+                </div>
               )}
 
               {formatCard.controls?.map((formatControl) => (

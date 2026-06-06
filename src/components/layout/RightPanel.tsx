@@ -1,100 +1,102 @@
 'use client'
 
+import {
+  BarChart2, LineChart, AreaChart, PieChart,
+  ScatterChart, Table2, Filter, BarChart3, GitBranch,
+} from 'lucide-react'
 import { FormatPane } from '@/components/format-pane/FormatPane'
-import { SkillToggle } from '@/components/format-pane/SkillToggle'
-import { JsonPreview } from '@/components/right-panel/JsonPreview'
-import { QualityScore } from '@/components/right-panel/QualityScore'
-import { ValidationPanel } from '@/components/right-panel/ValidationPanel'
 import { CHART_POOL } from '@/lib/chartPool'
 import { useThemeStore } from '@/store/themeStore'
+import type { FormatTab } from '@/types'
+
+const FORMAT_TABS: { id: FormatTab; label: string }[] = [
+  { id: 'visual',  label: 'Visual'  },
+  { id: 'general', label: 'General' },
+]
+
+function getVisualIcon(id: string) {
+  const props = { size: 14, strokeWidth: 1.8 }
+  if (['bar', 'stackedbar', 'clusteredbar', 'hundredstackedbar'].includes(id))
+    return <BarChart2 {...props} style={{ transform: 'rotate(90deg)' }} />
+  if (['column', 'stackedcol', 'clusteredcol', 'hundredstackedcol', 'waterfall'].includes(id))
+    return <BarChart2 {...props} />
+  if (['line', 'lineclustered', 'linestacked', 'ribbon'].includes(id))
+    return <LineChart {...props} />
+  if (['area', 'stackedarea'].includes(id))
+    return <AreaChart {...props} />
+  if (['pie', 'donut'].includes(id))
+    return <PieChart {...props} />
+  if (['scatter', 'bubble'].includes(id))
+    return <ScatterChart {...props} />
+  if (['table', 'matrix'].includes(id))
+    return <Table2 {...props} />
+  if (id === 'funnel')
+    return <Filter {...props} />
+  if (id === 'decompositiontree')
+    return <GitBranch {...props} />
+  return <BarChart3 {...props} />
+}
 
 export function RightPanel() {
-  const selectedVisual = useThemeStore((s) => s.selectedVisual)
-  const focusVisual = useThemeStore((s) => s.focusVisual)
-  const visualTitles = useThemeStore((s) => s.visualTitles)
-  const setVisualTitle = useThemeStore((s) => s.setVisualTitle)
+  const selectedVisual  = useThemeStore((s) => s.selectedVisual)
+  const focusVisual     = useThemeStore((s) => s.focusVisual)
+  const activeFormatTab = useThemeStore((s) => s.activeFormatTab)
+  const setFormatTab    = useThemeStore((s) => s.setFormatTab)
+
   const activeVisualId = selectedVisual ?? focusVisual
-  const activeVisual = CHART_POOL.find((visual) => visual.id === activeVisualId)
-  const activeTitle = activeVisual ? visualTitles[activeVisual.id] ?? activeVisual.title : ''
+  const activeVisual   = CHART_POOL.find((v) => v.id === activeVisualId)
 
   return (
     <aside className="right-panel">
-      <div className="panel-section-header">Format Panel</div>
-
-      <div className="right-scroll">
-        <div
-          style={{
-            padding: '12px 14px',
-            borderBottom: '1px solid var(--border-ui)',
-          }}
-        >
-          <div
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              color: 'var(--text-3)',
-              letterSpacing: '.05em',
-              textTransform: 'uppercase',
-              marginBottom: 5,
-            }}
-          >
-            Selected Visual
-          </div>
-          <div style={{ fontSize: 12, color: activeVisual ? 'var(--text)' : 'var(--text-2)', fontWeight: activeVisual ? 700 : 400 }}>
-            {activeVisual ? activeTitle : 'No visual selected'}
-          </div>
-          {activeVisual && (
-            <>
-              <div style={{ fontSize: 10.5, color: 'var(--text-3)', marginTop: 2 }}>
-                {activeVisual.sub}
-              </div>
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: 'var(--text-3)',
-                  marginTop: 10,
-                  marginBottom: 4,
-                }}
-              >
-                Title text
-              </label>
-              <input
-                type="text"
-                value={activeTitle}
-                onChange={(event) => setVisualTitle(activeVisual.id, event.target.value)}
-                onBlur={(event) => {
-                  if (!event.target.value.trim()) setVisualTitle(activeVisual.id, activeVisual.title)
-                }}
-                spellCheck={false}
-                style={{
-                  width: '100%',
-                  height: 27,
-                  border: '1px solid var(--border-ui)',
-                  borderRadius: 5,
-                  background: 'var(--surface)',
-                  color: 'var(--text)',
-                  fontSize: 11,
-                  fontFamily: 'inherit',
-                  padding: '0 8px',
-                  outline: 'none',
-                }}
-              />
-            </>
-          )}
-          {!activeVisual && (
-            <div style={{ fontSize: 10.5, color: 'var(--text-3)', marginTop: 2, lineHeight: 1.4 }}>
-              Select a chart on the canvas or use the visual selector to edit its formatting.
-            </div>
-          )}
+      {/* ── Selected Visual Row ── */}
+      <div
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 14px',
+          borderBottom: '1px solid var(--border-ui)',
+          background: 'var(--surface-2)',
+          minHeight: 44,
+        }}
+      >
+        <div style={{
+          width: 28, height: 28, borderRadius: 6, flexShrink: 0,
+          background: activeVisual ? 'var(--accent-soft)' : 'var(--surface)',
+          border: '1px solid var(--border-ui)',
+          display: 'grid', placeItems: 'center',
+          color: activeVisual ? 'var(--accent-ui)' : 'var(--text-3)',
+        }}>
+          {activeVisual ? getVisualIcon(activeVisual.id) : <BarChart3 size={14} strokeWidth={1.8} />}
         </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{
+            fontSize: 12, fontWeight: 700, color: 'var(--text)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {activeVisual ? activeVisual.title : 'No visual selected'}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 1 }}>
+            {activeVisual ? activeVisual.sub : 'Click a chart or use the toolbar'}
+          </div>
+        </div>
+      </div>
 
-        <SkillToggle />
+      {/* ── 3-Tab Row ── */}
+      <div className="right-tab-row">
+        {FORMAT_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className={`right-tab-btn${activeFormatTab === tab.id ? ' active' : ''}`}
+            onClick={() => setFormatTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Scrollable Content ── */}
+      <div className="right-scroll">
         <FormatPane />
-        <QualityScore />
-        <ValidationPanel />
-        <JsonPreview />
       </div>
     </aside>
   )

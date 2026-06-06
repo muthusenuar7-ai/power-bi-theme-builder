@@ -192,12 +192,16 @@ function legendSection(scope: string, titleText: string, defaultPosition = 'Top 
         select('position', 'Position', defaultPosition, LEGEND_POSITIONS, { stateKey: `${scope}.legend.position` }),
       ]),
       card('text', 'Text', [
+        toggle('show', 'Show item text', true, { stateKey: `${scope}.legend.text.show` }),
         font('font', 'Font', 'Segoe UI', 10),
         fontStyle(),
         color('color', 'Color', '#666666', { fx: true }),
       ]),
       card('title', 'Title', [
         text('titleText', 'Title text', titleText, { stateKey: `${scope}.legend.titleText` }),
+        font('font', 'Font', 'Segoe UI', 10),
+        fontStyle(),
+        color('color', 'Color', '#666666', { fx: true }),
       ], { toggle: { stateKey: `${scope}.legend.title.show`, defaultValue: true } }),
     ],
     {
@@ -661,7 +665,7 @@ function barStackedSchema(id: string, label: string): VisualFormatSchema {
     sections: [
       horizontalAxisSection('yAxis', 'Y-axis', false),
       horizontalAxisSection('xAxis', 'X-axis', true),
-      disabledPlaceholderSection('legend', 'Legend', undefined, { stateKey: 'bar.legend.show', defaultValue: false, disabled: true }),
+      legendSection('bar', 'Segment', 'Top left'),
       disabledPlaceholderSection('smallMultiples', 'Small multiples'),
       gridlinesSection('Vertical'),
       zoomSliderSection('X-axis', true),
@@ -701,11 +705,7 @@ function clusteredColumnSchema(): VisualFormatSchema {
     sections: [
       verticalAxisSection('xAxis', 'X-axis', false),
       verticalAxisSection('yAxis', 'Y-axis', true),
-      section('legend', 'Legend', [
-        card('reference', undefined, [
-          note('Legend section is captured as available and enabled. Inner legend sub-options were not expanded in the supplied screenshots, so the section is preserved without inventing extra controls.'),
-        ]),
-      ], { toggle: { stateKey: 'bar.legend.show', defaultValue: true }, showReset: false }),
+      legendSection('bar', 'Year', 'Top left'),
       disabledPlaceholderSection('smallMultiples', 'Small multiples'),
       gridlinesSection('Horizontal'),
       zoomSliderSection('Y-axis', true),
@@ -773,6 +773,22 @@ function hundredStackedColumnSchema(): VisualFormatSchema {
       ribbonsSection(true),
       dataLabelsSection({ orientation: true, percentDetail: true, layout: 'multi', warning: true }),
       plotAreaBackgroundSection(),
+    ],
+  }
+}
+
+function ribbonChartSchema(): VisualFormatSchema {
+  return {
+    id: 'ribbon',
+    label: 'Ribbon',
+    stateScope: 'bar',
+    sections: [
+      verticalAxisSection('xAxis', 'X-axis', false),
+      verticalAxisSection('yAxis', 'Y-axis', true),
+      legendSection('bar', 'Manager', 'Top left'),
+      gridlinesSection('Horizontal'),
+      ribbonsSection(false),
+      dataLabelsSection({ layout: 'single' }),
     ],
   }
 }
@@ -853,12 +869,12 @@ export const sharedGeneralFormatSchema: VisualFormatSchema = {
         color('color', 'Color', '#FFFFFF', { fx: true, stateKey: 'general.border.color' }),
         slider('roundedCorners', 'Rounded corners', 2, 'px', { max: 32, stateKey: 'general.border.radius' }),
         number('width', 'Width', 1, { stateKey: 'general.border.width' }),
-      ], { toggle: { stateKey: 'general.border.show', defaultValue: true } }),
+      ], { toggle: { stateKey: 'general.border.show', defaultValue: false } }),
       card('shadow', 'Shadow', [
         color('color', 'Color', '#000000', { fx: true, stateKey: 'general.shadow.color' }),
         select('offset', 'Offset', 'Outside', ['Outside', 'Inside']),
         select('position', 'Position', 'Bottom right', ['Bottom right', 'Bottom', 'Bottom left', 'Right', 'Center', 'Left', 'Top right', 'Top', 'Top left', 'Custom']),
-      ], { toggle: { stateKey: 'general.shadow.show', defaultValue: true } }),
+      ], { toggle: { stateKey: 'general.shadow.show', defaultValue: false } }),
     ]),
     section('dataFormat', 'Data format', [
       card('applyTo', undefined, [
@@ -929,6 +945,7 @@ const clusteredBar = clusteredBarSchema()
 const clusteredColumn = clusteredColumnSchema()
 const hundredBar = hundredStackedBarSchema()
 const hundredColumn = hundredStackedColumnSchema()
+const ribbon = ribbonChartSchema()
 
 export const visualFormatSchemas: Record<string, VisualFormatSchema> = {
   donut: donutSchema,
@@ -943,6 +960,7 @@ export const visualFormatSchemas: Record<string, VisualFormatSchema> = {
   stackedcol: columnStackedSchema('stackedcol', 'Column / Stacked Column'),
   hundredstackedbar: hundredBar,
   hundredstackedcol: hundredColumn,
+  ribbon,
 }
 
 export const fallbackVisualFormatSchema: VisualFormatSchema = {
@@ -956,7 +974,7 @@ export const fallbackVisualFormatSchema: VisualFormatSchema = {
       defaultOpen: true,
       cards: [
         card('pending', undefined, [
-          note('This visual is outside the current Batch 1 master format-pane reference. Select a Batch 1 visual to edit captured Power BI properties.'),
+          note('Visual-level properties for this chart type will be added in a future update. Use the General tab to customize title, background, border, and other shared properties.'),
         ]),
       ],
     },

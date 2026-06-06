@@ -53,6 +53,64 @@ export function lighten(hex: string, amount: number): string {
   return rgbToHex(r + (255 - r) * factor, g + (255 - g) * factor, b + (255 - b) * factor)
 }
 
+export function isDarkColor(hex: string): boolean {
+  return getRelativeLuminance(hex) < 0.35
+}
+
+/**
+ * Pick a line colour that clearly contrasts with the column colour it sits over
+ * (for line + column / combo charts). Prefers a palette colour with a real
+ * luminance gap from the columns; if the palette is too uniform, derives a
+ * darker (on light backgrounds) or lighter (on dark backgrounds) shade of the
+ * column colour so the line stays in-family but remains clearly visible.
+ */
+export function contrastingLineColor(columnColor: string, palette: readonly string[], background: string): string {
+  const dark = isDarkColor(background)
+  const lumColumn = getRelativeLuminance(columnColor)
+  let best = ''
+  let bestScore = 0
+  for (const candidate of palette) {
+    if (!candidate) continue
+    // The line must be visible on the canvas, not just different from the columns
+    // (a light palette colour could otherwise vanish on a light page).
+    if (getContrastRatio(candidate, background) < 1.9) continue
+    // Prefer the line on the "contrast" side: clearly DARKER than the columns on
+    // light pages, clearly LIGHTER on dark pages.
+    const directional = dark
+      ? getRelativeLuminance(candidate) - lumColumn
+      : lumColumn - getRelativeLuminance(candidate)
+    if (directional > bestScore) {
+      bestScore = directional
+      best = candidate
+    }
+  }
+  if (best && bestScore >= 0.04) return best
+  // Otherwise derive a darker (light bg) / lighter (dark bg) shade of the column
+  // colour: guaranteed to differ from the columns and stay visible on the page.
+  return dark ? lighten(columnColor, 42) : darken(columnColor, 42)
+}
+
+export function mixColor(hex1: string, hex2: string, amount: number): string {
+  const [r1, g1, b1] = hexToRgb(hex1)
+  const [r2, g2, b2] = hexToRgb(hex2)
+  const ratio = Math.max(0, Math.min(1, amount))
+  return rgbToHex(
+    r1 + (r2 - r1) * ratio,
+    g1 + (g2 - g1) * ratio,
+    b1 + (b2 - b1) * ratio,
+  )
+}
+
+export function withAlpha(hex: string, alpha: number): string {
+  const [r, g, b] = hexToRgb(hex)
+  const a = Math.max(0, Math.min(1, alpha))
+  return `rgba(${r}, ${g}, ${b}, ${a})`
+}
+
+export function getReadableTextColor(background: string): string {
+  return isDarkColor(background) ? '#F8FAFC' : '#0F172A'
+}
+
 export function addAlpha(hex: string, opacity: number): string {
   const [r, g, b] = hexToRgb(hex)
   const a = Math.round(Math.max(0, Math.min(1, opacity)) * 255)
@@ -87,7 +145,7 @@ export function extractColorsFromImage(imageDataUrl: string): Promise<string[]> 
           const lum = getRelativeLuminance(c)
           return lum > 0.02 && lum < 0.95 && !(r === g && g === b)
         })
-      resolve(sorted.slice(0, 8))
+      resolve(sorted.slice(0, 10))
     }
     img.onerror = () => resolve([])
     img.src = imageDataUrl

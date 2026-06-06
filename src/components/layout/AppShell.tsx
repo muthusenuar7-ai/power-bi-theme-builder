@@ -1,14 +1,12 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { Upload, Download, FileCode, Undo2, Redo2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { Upload, Download, Undo2, Redo2, Home, RotateCcw } from 'lucide-react'
 import { downloadThemeJSON, parseImportedThemeJSON } from '@/lib/themeGenerator'
-import { downloadPBITemplate } from '@/lib/pbiTemplateExporter'
 import { useCSSSync, useThemeStore } from '@/store/themeStore'
-import { LeftSidebar } from './LeftSidebar'
+import { LeftMenu } from './LeftMenu'
 import { RightPanel } from './RightPanel'
-import { CanvasToolbar } from '@/components/canvas/CanvasToolbar'
-import { VisualSelectorBar } from '@/components/canvas/VisualSelectorBar'
 import { DashboardCanvas } from '@/components/canvas/DashboardCanvas'
 
 export function AppShell() {
@@ -17,16 +15,25 @@ export function AppShell() {
   const themeName = useThemeStore((s) => s.themeName)
   const setThemeName = useThemeStore((s) => s.setThemeName)
   const applyImportedTheme = useThemeStore((s) => s.applyImportedTheme)
+  const canUndo = useThemeStore((s) => s.historyPast.length > 0)
+  const canRedo = useThemeStore((s) => s.historyFuture.length > 0)
+  const undo = useThemeStore((s) => s.undo)
+  const redo = useThemeStore((s) => s.redo)
+  const resetAllFormatting = useThemeStore((s) => s.resetAllFormatting)
   useCSSSync()
+
+  // The editor is a fixed full-viewport workspace: lock <body> scroll while
+  // it is mounted so the inner panels own their own scrolling. Other routes
+  // (landing, /icons, /layout-builder) scroll normally because this class is
+  // only present on /editor.
+  useEffect(() => {
+    document.body.classList.add('app-locked')
+    return () => document.body.classList.remove('app-locked')
+  }, [])
 
   function exportJson() {
     downloadThemeJSON(useThemeStore.getState())
     setNavStatus('Theme JSON exported')
-  }
-
-  function exportPbiTemplate() {
-    downloadPBITemplate(useThemeStore.getState())
-    setNavStatus('PBI Template downloaded')
   }
 
   async function importJson(file: File) {
@@ -57,26 +64,19 @@ export function AppShell() {
     <div className="app-shell">
       {/* ── Top Navigation Bar (52 px) ── */}
       <header className="top-nav">
-        {/* Brand mark */}
-        <div className="nav-brand">
-          <div className="nav-logo" aria-hidden="true">DC</div>
+        {/* Brand mark — links back to the landing page */}
+        <Link href="/" className="nav-brand" title="Back to home" style={{ textDecoration: 'none' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/assets/datacense-logo.jpg"
+            alt="Datacense"
+            style={{ height: 28, width: 'auto', borderRadius: 4, objectFit: 'contain', flexShrink: 0 }}
+          />
           <div>
-            <div className="nav-title">Theme Studio</div>
-            <div className="nav-sub">Power BI - Datacense</div>
+            <div className="nav-title">Power BI Theme Studio</div>
+            <div className="nav-sub">Datacense</div>
           </div>
-        </div>
-
-        <div className="nav-divider" />
-
-        {/* Datacense wordmark logo */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/assets/datacense-logo.jpg"
-          alt="Datacense"
-          width={110}
-          height={28}
-          style={{ objectFit: 'contain', opacity: 0.85 }}
-        />
+        </Link>
 
         <div className="nav-divider" />
 
@@ -124,35 +124,62 @@ export function AppShell() {
             Export JSON
           </button>
 
-          <button className="nav-btn" title="Download Power BI layout template" type="button" onClick={exportPbiTemplate}>
-            <FileCode size={13} strokeWidth={2} />
-            PBI Template
-          </button>
-
-          <div className="nav-divider" />
-
-          <button className="nav-icon-btn" title="Undo" aria-label="Undo" disabled>
-            <Undo2 size={14} strokeWidth={2} />
-          </button>
-          <button className="nav-icon-btn" title="Redo" aria-label="Redo" disabled>
-            <Redo2 size={14} strokeWidth={2} />
-          </button>
-
-          {navStatus && (
-            <span aria-live="polite" style={{ fontSize: 10, color: 'var(--text-3)', maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {navStatus}
+          <div className="nav-status-actions" aria-label="Formatting actions">
+            <button
+              className="nav-icon-btn"
+              title="Undo last theme or formatting change"
+              aria-label="Undo"
+              type="button"
+              disabled={!canUndo}
+              onClick={() => {
+                undo()
+                setNavStatus('Undo applied')
+              }}
+            >
+              <Undo2 size={14} strokeWidth={2} />
+            </button>
+            <button
+              className="nav-icon-btn"
+              title="Redo theme or formatting change"
+              aria-label="Redo"
+              type="button"
+              disabled={!canRedo}
+              onClick={() => {
+                redo()
+                setNavStatus('Redo applied')
+              }}
+            >
+              <Redo2 size={14} strokeWidth={2} />
+            </button>
+            <button
+              className="nav-btn nav-reset-btn"
+              title="Reset all General and Visual formatting overrides"
+              type="button"
+              onClick={() => {
+                resetAllFormatting()
+                setNavStatus('Reset to theme defaults')
+              }}
+            >
+              <RotateCcw size={13} strokeWidth={2} />
+              Reset
+            </button>
+            <span className="nav-status-text" aria-live="polite">
+              {navStatus ?? 'Theme ready'}
             </span>
-          )}
+          </div>
+
+          <Link className="nav-btn" href="/" title="Back to home">
+            <Home size={13} strokeWidth={2} />
+            Home
+          </Link>
         </div>
       </header>
 
       {/* ── 3-Column Content Area ── */}
       <div className="content-area">
-        <LeftSidebar />
+        <LeftMenu />
 
         <main className="center-area">
-          <CanvasToolbar />
-          <VisualSelectorBar />
           <DashboardCanvas />
         </main>
 

@@ -1,0 +1,814 @@
+/* IconLibraryStudio — premium wide three-panel layout for /icons.
+   Scoped CSS module so the hover/layout work here can't leak into the editor
+   or the landing page. Reuses the global Datacense design tokens (--surface,
+   --border-ui, --accent-ui, etc.) defined in globals.css. */
+
+.shell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface-2);
+  /* Polished Icon Studio accent system (blue/teal) — scoped to this page so the
+     rest of the app's tokens are untouched. Replaces the previous green accents. */
+  --studio-accent: #2563EB;
+  --studio-accent-2: #1D4ED8;
+  --studio-accent-soft: rgba(37, 99, 235, 0.12);
+  --studio-ring: rgba(37, 99, 235, 0.22);
+}
+
+/* Three-panel body: left filters · center browser · right sticky inspector */
+.body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 296px minmax(0, 1fr) 360px;
+  overflow: hidden;
+}
+
+.left,
+.center,
+.inspectorScroll {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.left::-webkit-scrollbar,
+.center::-webkit-scrollbar,
+.inspectorScroll::-webkit-scrollbar { width: 8px; }
+.left::-webkit-scrollbar-thumb,
+.center::-webkit-scrollbar-thumb,
+.inspectorScroll::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 6px; }
+
+.left {
+  border-right: 1px solid var(--border-ui);
+  background: var(--surface);
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+.ctrlGroup { display: flex; flex-direction: column; }
+
+.center {
+  padding: 20px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.right {
+  min-height: 0;
+  border-left: 1px solid var(--border-ui);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Sidebar groups ── */
+.groupLabel {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0 0 8px;
+}
+.sideList { display: flex; flex-direction: column; gap: 3px; }
+
+.sideItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.sideItem .count {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-3);
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 1px 8px;
+  flex-shrink: 0;
+}
+.sideItemActive {
+  background: var(--studio-accent-soft);
+  border-color: var(--studio-accent);
+  color: var(--studio-accent-2);
+}
+.sideItemActive .count { background: #fff; color: var(--studio-accent-2); }
+
+.catScroll { display: flex; flex-direction: column; gap: 3px; max-height: 280px; overflow-y: auto; padding-right: 2px; }
+
+/* Segmented style filter */
+.segment {
+  display: flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border-ui);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+.segmentBtn {
+  flex: 1;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.segmentBtnActive { background: var(--studio-accent); color: #fff; }
+
+.resetBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 34px;
+  border: 1px solid var(--border-ui);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* ── Center toolbar ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.searchWrap { position: relative; flex: 1; min-width: 200px; }
+.searchWrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-3); }
+.searchInput {
+  width: 100%;
+  height: 40px;
+  border-radius: 11px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13.5px;
+  padding: 0 12px 0 38px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 200ms, box-shadow 200ms;
+}
+.searchInput:focus { border-color: var(--studio-accent); box-shadow: 0 0 0 3px var(--studio-ring); }
+
+.sortSelect {
+  height: 40px;
+  border-radius: 11px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 0 10px;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.viewToggle {
+  display: inline-flex;
+  border: 1px solid var(--border-ui);
+  border-radius: 11px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.viewBtn {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.viewBtnActive { background: var(--studio-accent-soft); color: var(--studio-accent-2); }
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.sectionTitle .muted { font-weight: 700; color: var(--text-3); font-size: 11.5px; }
+
+/* Recently-used horizontal strip */
+.recentStrip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 2px 10px;
+  scrollbar-width: thin;
+}
+.recentCard {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+/* ── Icon grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+}
+.cardWrap {
+  position: relative;
+  border-radius: 14px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  color: var(--text-3);
+  overflow: hidden;
+}
+.cardSelectBtn {
+  width: 100%;
+  height: 100%;
+  min-height: 96px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 8px 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.cardName {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+.favBtn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-3);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 160ms, color 160ms, background-color 160ms;
+}
+.cardWrap:hover .favBtn,
+.favBtn:focus-visible { opacity: 1; }
+.favBtnActive { opacity: 1; color: var(--studio-accent); }
+.favBtn:hover { background: var(--surface-2); }
+
+.cardSelected {
+  border-color: var(--studio-accent);
+  background: var(--studio-accent-soft);
+  box-shadow: 0 0 0 2px var(--studio-ring);
+}
+.cardSelected .cardName { color: var(--studio-accent-2); }
+
+/* ── List view ── */
+.list { display: flex; flex-direction: column; gap: 6px; }
+.listRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border-ui);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text-2);
+  padding: 8px 12px;
+}
+.listSelectBtn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.listName { font-size: 13px; font-weight: 700; color: var(--text); }
+.listMeta { font-size: 11px; color: var(--text-3); }
+
+/* Pagination */
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+/* Multi-select action bar */
+.multiBar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.miniBtn {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px;
+  border-radius: 8px; border: 1px solid var(--border-ui); background: var(--surface);
+  color: var(--text-2); font-size: 11.5px; font-weight: 700; font-family: inherit; cursor: pointer;
+}
+.multiCount { font-size: 11.5px; font-weight: 700; color: var(--studio-accent-2); margin-left: auto; }
+.pagerBtn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  color: var(--text-2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.pagerBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagerLabel { font-size: 12px; font-weight: 700; color: var(--text-2); min-width: 92px; text-align: center; }
+
+/* ── Right inspector ──
+   Fills the right column as a flex column: a scrollable content region on top
+   and a NON-scrolling pinned action footer (URL + copy/download buttons).
+   This guarantees the Copy Relative URL / Copy Full URL actions are always
+   visible without scrolling, regardless of viewport height. */
+.inspector {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.inspectorScroll {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 16px 16px;
+}
+.inspectorActions {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--border-ui);
+  background: var(--surface);
+  box-shadow: 0 -8px 18px -16px rgba(15, 23, 42, 0.35);
+}
+.inspectorHeader { display: flex; align-items: center; justify-content: space-between; }
+.inspectorEyebrow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.previewBox {
+  border-radius: 16px;
+  border: 1px solid var(--border-ui);
+  height: 168px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.previewName { font-size: 16px; font-weight: 800; color: var(--text); letter-spacing: -0.01em; margin: 0; }
+.previewMeta { font-size: 11.5px; color: var(--text-3); margin: 4px 0 0; }
+
+.fieldLabel {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 7px;
+}
+.colorRow { display: flex; gap: 8px; align-items: center; }
+.colorSwatch { width: 38px; height: 34px; padding: 0; border: 1px solid var(--border-ui); border-radius: 9px; background: transparent; cursor: pointer; }
+.hexInput {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  border: 1px solid var(--border-ui);
+  border-radius: 9px;
+  padding: 0 10px;
+  font-family: var(--font-jetbrains-mono, monospace);
+  font-size: 12px;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+
+.chipRow { display: flex; gap: 8px; }
+.bgChip { width: 36px; height: 30px; border-radius: 8px; border: 1px solid var(--border-ui); cursor: pointer; }
+.bgChipActive { box-shadow: 0 0 0 2px var(--studio-accent); border-color: var(--studio-accent); }
+
+.sizeRow { display: flex; gap: 6px; }
+.sizeBtn {
+  flex: 1;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.sizeBtnActive { background: var(--studio-accent); border-color: var(--studio-accent); color: #fff; }
+
+.urlBox {
+  font-size: 11px;
+  color: var(--text-2);
+  font-family: var(--font-jetbrains-mono, monospace);
+  overflow-wrap: anywhere;
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-ui);
+}
+.copyBtn {
+  width: 100%;
+  height: 40px;
+  border-radius: 11px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.copyBtnPrimary { background: var(--studio-accent); border-color: var(--studio-accent); color: #fff; }
+.copyBtnDone { background: #ECFDF5; border-color: var(--studio-accent); color: var(--studio-accent-2); }
+.tagWrap { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border-ui);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.favToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 9px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.favToggleActive { color: var(--studio-accent); border-color: var(--studio-accent); background: var(--studio-accent-soft); }
+
+.empty {
+  border: 1px dashed var(--border-ui);
+  border-radius: 14px;
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+/* ── Customization panel (clean white card) ── */
+.customizePanel {
+  background: var(--surface);
+  border: 1px solid var(--border-ui);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+}
+.panelEyebrow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0 0 8px;
+}
+.customGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px 18px;
+}
+.swatchRow { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+.swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--border-ui);
+  cursor: pointer;
+  padding: 0;
+}
+.swatchActive { box-shadow: 0 0 0 2px var(--studio-accent); border-color: var(--studio-accent); }
+.slider { width: 100%; accent-color: var(--studio-accent); height: 26px; cursor: pointer; }
+
+/* Background that sits BEHIND the icon only (never the whole card). Scales with
+   the icon via padding, so the shape hugs the glyph. */
+.iconBg {
+  display: inline-grid;
+  place-items: center;
+  padding: 9px;
+  box-sizing: border-box;
+  transition: background-color 160ms ease, border-radius 160ms ease;
+}
+
+/* Export-all buttons (beside search) */
+.exportBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 13px;
+  border-radius: 11px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.exportBtn:disabled { opacity: 0.6; cursor: progress; }
+
+/* Category chips below the search */
+.catChips { display: flex; flex-wrap: wrap; gap: 7px; }
+
+/* Wrapping pill rows (shape / weight) */
+.pillRow { display: flex; flex-wrap: wrap; gap: 5px; }
+.pill {
+  flex: 0 0 auto;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.pillActive { background: var(--studio-accent); border-color: var(--studio-accent); color: #fff; }
+
+/* Gradient picker chips */
+.gradRow { display: flex; flex-wrap: wrap; gap: 5px; }
+.gradChip { width: 30px; height: 24px; border-radius: 7px; border: 1px solid var(--border-ui); cursor: pointer; padding: 0; }
+.gradChipActive { box-shadow: 0 0 0 2px var(--studio-accent); border-color: var(--studio-accent); }
+
+/* "Choose Style" cards (center) */
+.styleCards { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: 8px; }
+.styleCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 9px 11px;
+  border-radius: 12px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  cursor: pointer;
+  font-family: inherit;
+}
+.styleCardActive { border-color: var(--studio-accent); background: var(--studio-accent-soft); box-shadow: 0 0 0 2px var(--studio-ring); }
+.styleCardName { font-size: 12.5px; font-weight: 800; color: var(--text); }
+.styleCardActive .styleCardName { color: var(--studio-accent-2); }
+.styleCardHint { font-size: 10px; color: var(--text-3); }
+
+/* Toolbar multi-select button */
+.toolBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 11px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.toolBtnActive { background: var(--studio-accent); border-color: var(--studio-accent); color: #fff; }
+
+/* Right-panel action rows + Power BI context mockups */
+.actionRow { display: flex; gap: 8px; }
+.actionRow .copyBtn { flex: 1; min-width: 0; }
+.contextStack { display: flex; flex-direction: column; gap: 8px; }
+.kpiCard { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border-ui); border-radius: 12px; background: var(--surface); }
+.kpiValue { font-size: 15px; font-weight: 800; color: var(--text); line-height: 1.1; }
+.kpiLabel { font-size: 10.5px; color: var(--text-3); }
+.kpiDelta { margin-left: auto; font-size: 10.5px; font-weight: 700; color: #16a34a; }
+.kpiTile { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; color: #fff; }
+.tileValue { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.1; }
+.tileLabel { font-size: 10.5px; color: rgba(255, 255, 255, 0.82); }
+.sidebarItem { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--border-ui); }
+.sidebarText { font-size: 12px; font-weight: 600; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ═══════════════════════════════════════════════════════════
+   PREMIUM HOVER — Apple-inspired: subtle lift, light scale,
+   soft shadow, refined border. Transitions always defined;
+   transforms only on real hover-capable pointers so touch
+   devices never get stuck in a hover state.
+   ═══════════════════════════════════════════════════════════ */
+.lift,
+.cardWrap,
+.recentCard,
+.listRow,
+.chip,
+.copyBtn,
+.resetBtn,
+.sideItem,
+.pagerBtn,
+.bgChip,
+.swatch,
+.exportBtn,
+.styleCard,
+.toolBtn,
+.gradChip {
+  transition:
+    transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 200ms,
+    background-color 200ms,
+    color 200ms;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lift:hover { box-shadow: var(--shadow-md); border-color: rgba(255, 255, 255, 0.28); }
+
+  .cardWrap:hover {
+    box-shadow: var(--shadow-lg);
+    border-color: var(--studio-accent);
+    color: var(--text);
+  }
+  .cardWrap:hover .cardName { color: var(--text); }
+
+  .recentCard:hover {
+    box-shadow: var(--shadow-lg);
+    border-color: var(--studio-accent);
+    color: var(--text);
+  }
+
+  .listRow:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--studio-accent);
+    color: var(--text);
+  }
+
+  .sideItem:hover { border-color: var(--border-ui); background: var(--surface-2); color: var(--text); }
+
+  .copyBtn:hover,
+  .resetBtn:hover,
+  .pagerBtn:not(:disabled):hover { box-shadow: var(--shadow-md); border-color: var(--studio-accent); }
+
+  .copyBtnPrimary:hover { background: var(--studio-accent-2); }
+
+  .bgChip:hover { box-shadow: var(--shadow-sm); }
+  .swatch:hover { box-shadow: var(--shadow-sm); }
+  .exportBtn:not(:disabled):hover { box-shadow: var(--shadow-md); border-color: var(--studio-accent); }
+  .styleCard:hover { box-shadow: var(--shadow-sm); border-color: var(--studio-accent); }
+  .toolBtn:hover { box-shadow: var(--shadow-sm); border-color: var(--studio-accent); }
+  .gradChip:hover { box-shadow: var(--shadow-sm); }
+  .miniBtn:hover { box-shadow: var(--shadow-sm); border-color: var(--studio-accent); }
+}
+
+/* Category / filter chips reuse a dedicated class */
+.chip {
+  height: 30px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border-ui);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.chipActive { background: var(--studio-accent); border-color: var(--studio-accent); color: #fff; }
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover { box-shadow: var(--shadow-sm); border-color: var(--studio-accent); }
+}
+
+/* Keyboard focus stays clearly visible everywhere */
+.cardWrap:focus-within,
+.recentCard:focus-visible,
+.listRow:focus-within,
+.sideItem:focus-visible,
+.chip:focus-visible,
+.copyBtn:focus-visible,
+.resetBtn:focus-visible,
+.pagerBtn:focus-visible,
+.viewBtn:focus-visible,
+.segmentBtn:focus-visible,
+.bgChip:focus-visible,
+.sizeBtn:focus-visible,
+.favBtn:focus-visible,
+.favToggle:focus-visible,
+.swatch:focus-visible,
+.exportBtn:focus-visible,
+.slider:focus-visible,
+.styleCard:focus-visible,
+.toolBtn:focus-visible,
+.pill:focus-visible,
+.gradChip:focus-visible {
+  outline: 2px solid var(--studio-accent);
+  outline-offset: 2px;
+}
+
+/* ── Responsive: stack panels and let the page scroll on narrow screens ── */
+@media (max-width: 1080px) {
+  .shell { height: auto; min-height: 100vh; overflow: visible; overflow-x: hidden; }
+  .body { display: flex; flex-direction: column; overflow: visible; }
+  .left,
+  .center,
+  .right { overflow: visible; border: 0; min-height: 0; }
+  /* Lead with the icon browser, then the selected-icon preview/export, then the
+     (secondary) customization controls — so the grid is usable immediately and
+     download/copy actions sit right under it on a phone. */
+  .center { order: 1; }
+  .right  { order: 2; border-top: 1px solid var(--border-ui); }
+  .left   { order: 3; border-top: 1px solid var(--border-ui); }
+  .inspector { flex: initial; }
+  .inspectorScroll { overflow: visible; }
+  .inspectorActions { box-shadow: none; position: static; }
+}
+
+/* ── Phone: tighten spacing, more icon columns, and guarantee the top bar and
+   grid never force horizontal overflow ── */
+@media (max-width: 560px) {
+  .center { padding: 14px 12px 40px; gap: 14px; }
+  .left { padding: 14px 12px; gap: 12px; }
+  .inspectorScroll { padding: 14px 12px; }
+  .inspectorActions { padding: 12px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+  .cardSelectBtn { min-height: 84px; padding: 12px 6px 10px; }
+  .styleCards { grid-template-columns: repeat(2, 1fr); }
+  /* Search takes a full row; the action buttons wrap neatly under it. */
+  .searchWrap { flex-basis: 100%; min-width: 0; }
+  .pagerLabel { min-width: 0; }
+  /* Header (shared .top-nav) — scoped to Icon Studio: hide the sub-label, the
+     divider, and the redundant Home button (the logo already links home) and
+     tighten padding so the brand + Theme Builder fit phones without clipping. */
+  .shell :global(.top-nav) { padding: 0 10px; gap: 8px; }
+  .shell :global(.nav-sub) { display: none; }
+  .shell :global(.nav-divider) { display: none; }
+  .shell :global(.nav-actions) { gap: 4px; }
+  .shell :global(.nav-actions .nav-btn:not(.accent)) { display: none; }
+  .shell :global(.nav-btn) { padding: 0 8px; }
+}

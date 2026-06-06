@@ -36,6 +36,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 pnpm-debug.log*
+*.log
+build-log.txt
+.build-out.txt
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -50,9 +53,17 @@ pnpm-debug.log*
 
 # local helper snippets
 .gitignore.additions
+Temp/
 
 # local agent worktrees/caches
 .claude/worktrees/
+.claude/launch.json
+
+# local Power BI sample/decompile artifacts
+sample.pbix
+sample.pbip
+sample.Report/
+sample.SemanticModel/
 
 # typescript
 *.tsbuildinfo

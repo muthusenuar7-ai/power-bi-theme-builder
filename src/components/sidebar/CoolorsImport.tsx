@@ -3,16 +3,18 @@
 import { useRef, useState } from 'react'
 import { Check, FileUp } from 'lucide-react'
 import { parseCoolorsFile, parseCoolorsUrl } from '@/lib/coolorsParser'
+import { getPaletteBySize, inferPaletteSizeFromDataColors } from '@/lib/paletteUtils'
 import { useThemeStore } from '@/store/themeStore'
 
 function padColors(colors: string[], existing: string[]): string[] {
-  return [...colors, ...existing].slice(0, 8)
+  return getPaletteBySize([...colors, ...existing], 10)
 }
 
 export function CoolorsImport() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const existingColors = useThemeStore((s) => s.dataColors)
   const setDataColors = useThemeStore((s) => s.setDataColors)
+  const setPaletteSize = useThemeStore((s) => s.setPaletteSize)
   const setPrimary = useThemeStore((s) => s.setPrimary)
   const setAccent = useThemeStore((s) => s.setAccent)
   const [url, setUrl] = useState('')
@@ -38,6 +40,7 @@ export function CoolorsImport() {
 
     const colors = padColors(extracted, existingColors)
     setDataColors(colors)
+    setPaletteSize(inferPaletteSizeFromDataColors(extracted))
     setPrimary(colors[0])
     setAccent(colors[1] ?? colors[0])
     setMessage('Palette applied to data colors.')
@@ -147,7 +150,7 @@ export function CoolorsImport() {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 4 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 4 }}>
         {padColors(extracted, existingColors).map((color, index) => (
           <div
             key={`${color}-${index}`}

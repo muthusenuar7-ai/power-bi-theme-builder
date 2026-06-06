@@ -104,16 +104,6 @@ export default function LandingPage({ onApplyPreset, onSubscribe }: LandingPageP
         </div>
       </header>
 
-      {/* ===== TRUST ===== */}
-      <section className={styles.trust}>
-        <div className={styles.wrap}>
-          <p className={styles.trustLead}>{c.trust.lead}</p>
-          <div className={styles.trustLogos}>
-            {c.trust.logos.map((l) => <span key={l}>{l}</span>)}
-          </div>
-        </div>
-      </section>
-
       {/* ===== COMPARISON + PRODUCTS ===== */}
       <section className={styles.section} id="products">
         <div className={styles.wrap}>
@@ -276,8 +266,12 @@ export default function LandingPage({ onApplyPreset, onSubscribe }: LandingPageP
               </Link>
               <p className={styles.footerBlurb}>{c.footer.blurb}</p>
               <div className={styles.social}>
-                <a href="#" aria-label="LinkedIn" style={{ color: "#a9b6cc" }}><LinkedInGlyph /></a>
-                <a href="#" aria-label="YouTube" style={{ color: "#a9b6cc" }}><YouTubeGlyph /></a>
+                {c.footer.socialLinks.map((link) => (
+                  <a key={link.label} href={link.href} aria-label={link.label} title={link.label} style={{ color: "#a9b6cc", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    {link.label.toLowerCase().includes("youtube") ? <YouTubeGlyph /> : <LinkedInGlyph />}
+                    <span style={{ fontSize: 11, fontWeight: 700 }}>{link.label}</span>
+                  </a>
+                ))}
               </div>
             </div>
             {c.footer.columns.map((col) => (

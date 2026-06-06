@@ -31,8 +31,8 @@ export const landingContent: LandingContent = {
   },
 
   trust: {
-    lead: "Trusted by data teams building enterprise-grade Power BI",
-    logos: ["NORTHWIND", "FINCORE", "BLUEPEAK", "AURORA", "DATAWISE", "INSIGHT"],
+    lead: "",
+    logos: [],
   },
 
   comparison: {
@@ -156,7 +156,7 @@ export const landingContent: LandingContent = {
   footer: {
     brand: { name: "DATACENSE", sub: "THEME STUDIO" },
     blurb:
-      "Empowering Power BI professionals to create consistent, impactful, and beautiful data experiences.",
+      "About DataCense: DataCense helps learners, analysts, and business teams build better reporting solutions using Power BI, Excel, analytics, automation, and AI-assisted productivity workflows.",
     columns: [
       {
         title: "Product",
@@ -179,11 +179,13 @@ export const landingContent: LandingContent = {
         title: "Company",
         links: [
           { label: "About Us", href: "/about" },
-          { label: "Careers", href: "/careers" },
-          { label: "Partners", href: "/partners" },
-          { label: "Contact Us", href: "/contact" },
+          { label: "Contact Us", href: "mailto:support@datascience.com" },
         ],
       },
+    ],
+    socialLinks: [
+      { label: "LinkedIn (official URL TODO)", href: "#" },
+      { label: "YouTube (official URL TODO)", href: "#" },
     ],
     newsletter: {
       title: "Stay in the loop",

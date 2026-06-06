@@ -115,6 +115,7 @@ export interface FooterContent {
   brand: { name: string; sub: string };
   blurb: string;
   columns: FooterColumn[];
+  socialLinks: NavLink[];
   newsletter: { title: string; description: string; placeholder: string; cta: string };
   legal: string;
   legalLinks: string[];

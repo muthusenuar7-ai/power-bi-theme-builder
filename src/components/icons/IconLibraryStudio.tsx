@@ -23,6 +23,7 @@ const FAVORITES_KEY = 'dc-icon-favorites'
 type SortOrder = 'name-asc' | 'name-desc' | 'category'
 type ViewMode = 'grid' | 'list'
 type IconStyle = 'precision' | 'softline' | 'framework' | 'heritage'
+type BackgroundMode = 'solid' | 'gradient' | 'none'
 type BgShape = 'none' | 'softtile' | 'rounded' | 'capsule' | 'circle'
 type IconWeight = 'thin' | 'regular' | 'medium' | 'bold'
 
@@ -222,10 +223,11 @@ export function IconLibraryStudio() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
   const [iconStyle, setIconStyle] = useState<IconStyle>('framework')
-  const [bgColor, setBgColor] = useState('transparent')
+  const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>('none')
+  const [solidBackgroundColor, setSolidBackgroundColor] = useState('#FFFFFF')
   const [bgOpacity, setBgOpacity] = useState(100)
-  const [bgShape, setBgShape] = useState<BgShape>('none')
-  const [gradient, setGradient] = useState<LibraryGradient | null>(null)
+  const [bgShape, setBgShape] = useState<BgShape>('rounded')
+  const [selectedGradient, setSelectedGradient] = useState<LibraryGradient | null>(null)
   const [iconWeight, setIconWeight] = useState<IconWeight>('regular')
   const [iconSize, setIconSize] = useState(28)
   const [iconPadding, setIconPadding] = useState(10)
@@ -309,16 +311,21 @@ export function IconLibraryStudio() {
     flash(key)
   }, [flash])
 
+  const activateBackgroundMode = useCallback((mode: BackgroundMode) => {
+    setBackgroundMode(mode)
+    if (mode !== 'none' && bgShape === 'none') setBgShape('rounded')
+  }, [bgShape])
+
   const sheetOptions = useCallback((isFlag: boolean): SheetOptions => ({
     iconColor: sanitizeHex(iconColor),
     weight: iconWeight,
     style: iconStyle,
     isFlag,
-    bgFill: bgShape === 'none' ? 'transparent' : gradient ? gradient.solid : rgbaFromHex(bgColor, bgOpacity),
-    bgShape,
+    bgFill: backgroundMode === 'solid' ? rgbaFromHex(solidBackgroundColor, bgOpacity) : 'transparent',
+    bgShape: backgroundMode === 'none' ? 'none' : bgShape,
     padding: Math.round(iconPadding * (256 / 72)),
-    gradient,
-  }), [iconColor, iconWeight, iconStyle, bgShape, gradient, bgColor, bgOpacity, iconPadding])
+    gradient: backgroundMode === 'gradient' ? selectedGradient : null,
+  }), [iconColor, iconWeight, iconStyle, backgroundMode, solidBackgroundColor, bgOpacity, bgShape, iconPadding, selectedGradient])
 
   const fetchText = useCallback(async (url: string) => {
     const cached = SVG_CACHE.get(url)
@@ -424,7 +431,7 @@ export function IconLibraryStudio() {
   const clearSelection = useCallback(() => setSelectedIds([]), [])
 
   const resetCustomization = useCallback(() => {
-    setIconStyle('framework'); setBgColor('transparent'); setBgOpacity(100); setBgShape('none'); setGradient(null); setIconWeight('regular'); setIconSize(28); setIconPadding(10)
+    setIconStyle('framework'); setBackgroundMode('none'); setSolidBackgroundColor('#FFFFFF'); setBgOpacity(100); setBgShape('rounded'); setSelectedGradient(null); setIconWeight('regular'); setIconSize(28); setIconPadding(10)
   }, [])
 
   const onIconClick = useCallback((icon: IconLibraryItem) => {
@@ -433,10 +440,15 @@ export function IconLibraryStudio() {
   }, [multiSelect, setSelectedIcon])
 
   const iconBgStyle = useMemo(() => {
-    const background = gradient ? gradient.css : bgShape === 'none' ? 'transparent' : rgbaFromHex(bgColor, bgOpacity)
-    const padX = bgShape === 'capsule' ? iconPadding + 8 : iconPadding
-    return { background, borderRadius: shapeRadiusCss(bgShape), padding: `${iconPadding}px ${padX}px` }
-  }, [gradient, bgShape, bgColor, bgOpacity, iconPadding])
+    const effectiveShape = backgroundMode === 'none' ? 'none' : bgShape
+    const background = backgroundMode === 'gradient' && selectedGradient
+      ? selectedGradient.css
+      : backgroundMode === 'solid'
+        ? rgbaFromHex(solidBackgroundColor, bgOpacity)
+        : 'transparent'
+    const padX = effectiveShape === 'capsule' ? iconPadding + 8 : iconPadding
+    return { background, borderRadius: shapeRadiusCss(effectiveShape), padding: `${iconPadding}px ${padX}px` }
+  }, [backgroundMode, selectedGradient, bgShape, solidBackgroundColor, bgOpacity, iconPadding])
 
   const gridIconSize = Math.max(16, Math.min(iconSize, 40))
 
@@ -484,24 +496,89 @@ export function IconLibraryStudio() {
             </div>
           </ControlGroup>
 
+          <ControlGroup label="Background mode">
+            <div className={styles.pillRow} role="group" aria-label="Background mode">
+              {(['none', 'solid', 'gradient'] as BackgroundMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`${styles.pill} ${backgroundMode === mode ? styles.pillActive : ''}`}
+                  onClick={() => {
+                    if (mode === 'gradient' && !selectedGradient && GRADIENT_OPTIONS[0]) setSelectedGradient(GRADIENT_OPTIONS[0])
+                    activateBackgroundMode(mode)
+                  }}
+                  aria-pressed={backgroundMode === mode}
+                >
+                  {mode === 'none' ? 'None' : mode === 'solid' ? 'Solid' : 'Gradient'}
+                </button>
+              ))}
+            </div>
+          </ControlGroup>
+
           <ControlGroup label="Background color">
             <div className={styles.swatchRow}>
               {BG_COLOR_SWATCHES.map((c) => (
-                <button key={c} type="button" className={`${styles.swatch} ${!gradient && bgColor === c ? styles.swatchActive : ''}`} style={{ background: c === 'transparent' ? CHECKER_BG : c }} onClick={() => { setGradient(null); setBgColor(c) }} title={c === 'transparent' ? 'Transparent' : c} aria-label={`Background colour ${c}`} />
+                <button
+                  key={c}
+                  type="button"
+                  className={`${styles.swatch} ${backgroundMode === 'solid' && solidBackgroundColor === c ? styles.swatchActive : ''}`}
+                  style={{ background: c === 'transparent' ? CHECKER_BG : c }}
+                  onClick={() => {
+                    if (c === 'transparent') {
+                      setSolidBackgroundColor(c)
+                      setBackgroundMode('none')
+                    } else {
+                      setSolidBackgroundColor(c)
+                      activateBackgroundMode('solid')
+                    }
+                  }}
+                  title={c === 'transparent' ? 'Transparent' : c}
+                  aria-label={`Background colour ${c}`}
+                />
               ))}
             </div>
             <div className={styles.colorRow}>
-              <input type="color" className={styles.colorSwatch} value={bgColor === 'transparent' ? '#FFFFFF' : sanitizeHex(bgColor)} onChange={(e) => { setGradient(null); setBgColor(e.target.value.toUpperCase()) }} aria-label="Background colour picker" />
-              <input className={styles.hexInput} value={bgColor} onChange={(e) => setBgColor(e.target.value)} onBlur={(e) => { const v = e.currentTarget.value.trim(); setBgColor(v.toLowerCase() === 'transparent' ? 'transparent' : sanitizeHex(v).toUpperCase()) }} aria-label="Background hex colour" spellCheck={false} />
+              <input
+                type="color"
+                className={styles.colorSwatch}
+                value={solidBackgroundColor === 'transparent' ? '#FFFFFF' : sanitizeHex(solidBackgroundColor)}
+                onChange={(e) => { setSolidBackgroundColor(e.target.value.toUpperCase()); activateBackgroundMode('solid') }}
+                aria-label="Background colour picker"
+              />
+              <input
+                className={styles.hexInput}
+                value={solidBackgroundColor}
+                onChange={(e) => setSolidBackgroundColor(e.target.value)}
+                onBlur={(e) => {
+                  const v = e.currentTarget.value.trim()
+                  if (v.toLowerCase() === 'transparent') {
+                    setSolidBackgroundColor('transparent')
+                    setBackgroundMode('none')
+                  } else {
+                    setSolidBackgroundColor(sanitizeHex(v).toUpperCase())
+                    activateBackgroundMode('solid')
+                  }
+                }}
+                aria-label="Background hex colour"
+                spellCheck={false}
+              />
             </div>
           </ControlGroup>
 
           {GRADIENT_OPTIONS.length > 0 && (
             <ControlGroup label="Gradient background">
               <div className={styles.gradRow}>
-                <button type="button" className={`${styles.gradChip} ${!gradient ? styles.gradChipActive : ''}`} style={{ background: CHECKER_BG }} onClick={() => setGradient(null)} title="No gradient" aria-label="No gradient" />
+                <button type="button" className={`${styles.gradChip} ${backgroundMode === 'none' ? styles.gradChipActive : ''}`} style={{ background: CHECKER_BG }} onClick={() => setBackgroundMode('none')} title="No background" aria-label="No background" />
                 {GRADIENT_OPTIONS.map((g) => (
-                  <button key={g.code} type="button" className={`${styles.gradChip} ${gradient?.code === g.code ? styles.gradChipActive : ''}`} style={{ background: g.css }} onClick={() => { setGradient(g); if (bgShape === 'none') setBgShape('rounded') }} title={g.name} aria-label={`Gradient ${g.name}`} />
+                  <button
+                    key={g.code}
+                    type="button"
+                    className={`${styles.gradChip} ${backgroundMode === 'gradient' && selectedGradient?.code === g.code ? styles.gradChipActive : ''}`}
+                    style={{ background: g.css }}
+                    onClick={() => { setSelectedGradient(g); activateBackgroundMode('gradient') }}
+                    title={g.name}
+                    aria-label={`Gradient ${g.name}`}
+                  />
                 ))}
               </div>
             </ControlGroup>
@@ -668,7 +745,7 @@ export function IconLibraryStudio() {
                     <div className={styles.kpiDelta}>▲ 12.4%</div>
                   </div>
                   <div className={styles.kpiTile} style={{ background: sanitizeHex(themePrimary || '#2563EB') }}>
-                    <span className={styles.iconBg} style={{ ...iconBgStyle, background: bgShape === 'none' && !gradient ? 'rgba(255,255,255,.18)' : iconBgStyle.background }}>{selectedIcon && isFlagIcon(selectedIcon.id) ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={relativeUrl} width={20} height={20} alt="" /> : <InlineStyledIcon url={relativeUrl} color={bgShape === 'none' && !gradient ? '#FFFFFF' : iconColor} size={20} weight={iconWeight} style={iconStyle} flag={false} />}</span>
+                    <span className={styles.iconBg} style={{ ...iconBgStyle, background: backgroundMode === 'none' ? 'rgba(255,255,255,.18)' : iconBgStyle.background }}>{selectedIcon && isFlagIcon(selectedIcon.id) ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={relativeUrl} width={20} height={20} alt="" /> : <InlineStyledIcon url={relativeUrl} color={backgroundMode === 'none' ? '#FFFFFF' : iconColor} size={20} weight={iconWeight} style={iconStyle} flag={false} />}</span>
                     <div style={{ minWidth: 0 }}><div className={styles.tileValue}>847</div><div className={styles.tileLabel}>Active Users</div></div>
                   </div>
                   <div className={styles.sidebarItem}>

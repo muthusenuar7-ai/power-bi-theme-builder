@@ -4,7 +4,14 @@ import { useEffect } from 'react'
 import { create } from 'zustand'
 import { cyclePalette, getPaletteBySize, inferPaletteSizeFromDataColors, normalizeHexColor } from '@/lib/paletteUtils'
 import { getRelativeLuminance } from '@/lib/colorUtils'
+import { ensureAccentVisible, refineChartColors } from '@/lib/themeSurfaceFormula'
 import { getVisualFormatSchema } from '@/lib/visualFormatSchema'
+import {
+  APP_TYPOGRAPHY_BASELINE,
+  removeTypographyFormatProps,
+  typographyDefaultsFromPreset,
+  typographyDefaultsToFormatProps,
+} from '@/lib/typographyDefaults'
 import type {
   ThemeState,
   ThemeActions,
@@ -32,15 +39,8 @@ const DEFAULT_COLORS = [
  * which we deliberately leave unset so the resolver can derive readable values
  * from the chosen background (see dashboardThemeResolver).
  */
-const DEFAULT_FONT_FAMILY = 'Segoe UI'
-const DEFAULT_TITLE_FONT_SIZE = 14
-const DEFAULT_LABEL_FONT_SIZE = 10
 const HISTORY_LIMIT = 60
-const DEFAULT_FORMAT_PROPS: Record<string, FormatValue> = {
-  'general.typography.fontFace': DEFAULT_FONT_FAMILY,
-  'general.title.fontSize':      DEFAULT_TITLE_FONT_SIZE,
-  'general.label.fontSize':      DEFAULT_LABEL_FONT_SIZE,
-}
+const DEFAULT_FORMAT_PROPS: Record<string, FormatValue> = typographyDefaultsToFormatProps(APP_TYPOGRAPHY_BASELINE)
 
 const initialState: ThemeState = {
   dataColors:      DEFAULT_COLORS,
@@ -79,13 +79,14 @@ const initialState: ThemeState = {
   skillLevel:      'basic',
   activeFormatTab: 'visual',
   formatProps:     { ...DEFAULT_FORMAT_PROPS },
+  typographyDefaults: { ...APP_TYPOGRAPHY_BASELINE },
   selectedVisual:  null,
   themeName:       'My PBI Theme',
   visualTitles:    {},
-  selectedIconId:    'tabler-chart-bar',
-  selectedIconUrl:   '/icon-library/tabler/chart-bar.svg',
+  selectedIconId:    'v2-bar-chart',
+  selectedIconUrl:   null,
   selectedIconColor: '#0D9488',
-  recentIcons:       ['tabler-chart-bar'],
+  recentIcons:       ['v2-bar-chart'],
   historyPast:       [],
   historyFuture:     [],
 }
@@ -149,6 +150,7 @@ function snapshotState(s: ThemeState): ThemeHistorySnapshot {
     tableAccent: s.tableAccent,
     paletteSize: s.paletteSize,
     formatProps: { ...s.formatProps },
+    typographyDefaults: { ...s.typographyDefaults },
     visualTitles: { ...s.visualTitles },
   }
 }
@@ -207,8 +209,12 @@ export const useThemeStore = create<ThemeState & ThemeActions>()((set) => ({
   applyImportedTheme: (patch: ThemeImportPatch) =>
     set((s) => {
       const inferredSize = patch.paletteSize ?? (patch.dataColors?.length ? inferPaletteSizeFromDataColors(patch.dataColors) : s.paletteSize)
+      const importedSurface = normalizeHexColor(
+        patch.visualBackground ?? patch.cardBackground ?? s.visualBackground,
+        '#FFFFFF',
+      )
       const importedColors = patch.dataColors?.length
-        ? getPaletteBySize([...patch.dataColors, ...s.dataColors], 10)
+        ? refineChartColors(getPaletteBySize([...patch.dataColors, ...s.dataColors], 10), importedSurface).colors
         : getPaletteBySize(s.dataColors, 10)
 
       return {
@@ -239,17 +245,20 @@ export const useThemeStore = create<ThemeState & ThemeActions>()((set) => ({
         tableAccent: patch.tableAccent ?? importedColors[0] ?? s.tableAccent,
         paletteSize: inferredSize,
         currentPage: 0,
+        typographyDefaults: patch.typographyDefaults ?? { ...APP_TYPOGRAPHY_BASELINE },
+        formatProps: {
+          ...removeTypographyFormatProps(s.formatProps),
+          ...typographyDefaultsToFormatProps(patch.typographyDefaults ?? APP_TYPOGRAPHY_BASELINE),
+        },
       }
     }),
 
   applyPreset: (preset: PresetTheme) =>
     set((s) => {
       const sourceColors = preset.dataColorsFull?.length ? preset.dataColorsFull : preset.colors
-      const colors = sourceColors.length
+      const declaredColors = sourceColors.length
         ? sourceColors.map((color, index) => normalizeHexColor(color, DEFAULT_COLORS[index % DEFAULT_COLORS.length]))
         : [...DEFAULT_COLORS]
-      const primary = normalizeHexColor(preset.primaryColor, colors[0] ?? s.primary)
-      const accent = normalizeHexColor(preset.accentColor, colors[1] ?? s.accent)
       const background = normalizeHexColor(
         preset.dashboardBackground ?? preset.pageBackground ?? preset.background ?? preset.bg,
         s.bg,
@@ -257,15 +266,15 @@ export const useThemeStore = create<ThemeState & ThemeActions>()((set) => ({
       const foreground = normalizeHexColor(preset.foreground ?? preset.fg, s.fg)
       const visualBackground = normalizeHexColor(preset.visualBackground, s.visualBackground)
       const cardBackground = normalizeHexColor(preset.cardBackground ?? preset.visualBackground, visualBackground)
-      const presetGeneral: Record<string, FormatValue> = {}
-      if (preset.fontFamily)       presetGeneral['general.typography.fontFace'] = preset.fontFamily
-      // Typography sizes: take the preset's value, else keep what's in state,
-      // else fall back to the seeded defaults (never leave them unset).
-      presetGeneral['general.title.fontSize'] =
-        preset.titleFontSize ?? s.formatProps['general.title.fontSize'] ?? DEFAULT_TITLE_FONT_SIZE
-      presetGeneral['general.label.fontSize'] =
-        preset.labelFontSize ?? s.formatProps['general.label.fontSize'] ?? DEFAULT_LABEL_FONT_SIZE
-      const inheritedProps = removeKeys(s.formatProps, [
+      // Standard colour formula: soft/washed-out palette colours are strengthened
+      // (hue preserved) against the card surface so charts stay elegant and
+      // readable in the preview AND in the exported Power BI JSON.
+      const colors = refineChartColors(declaredColors, visualBackground).colors
+      const primary = normalizeHexColor(preset.primaryColor, colors[0] ?? s.primary)
+      const accent = normalizeHexColor(preset.accentColor, colors[1] ?? s.accent)
+      const typographyDefaults = typographyDefaultsFromPreset(preset)
+      const presetGeneral = typographyDefaultsToFormatProps(typographyDefaults)
+      const inheritedProps = removeKeys(removeTypographyFormatProps(s.formatProps), [
         'general.background.color',
         'general.background.transparency',
         'general.title.fontColor',
@@ -293,14 +302,15 @@ export const useThemeStore = create<ThemeState & ThemeActions>()((set) => ({
         canvasBackgroundMode: 'theme',
         visualBackgroundMode: 'theme',
         fg:          foreground,
-        good:        preset.good,
-        neutral:     preset.neutral,
-        bad:         preset.bad,
+        good:        ensureAccentVisible(preset.good, visualBackground, '#16A34A'),
+        neutral:     ensureAccentVisible(preset.neutral, visualBackground, '#F59E0B'),
+        bad:         ensureAccentVisible(preset.bad, visualBackground, '#DC2626'),
         tableAccent: preset.tableAccent ?? primary,
         // Kept for compatibility with older import/QA code. Preset selection no
         // longer derives or mutates active data colours from this field.
         paletteSize: s.paletteSize,
         currentPage: 0,
+        typographyDefaults,
         formatProps: { ...inheritedProps, ...presetGeneral },
       }
     }),
@@ -347,6 +357,14 @@ export const useThemeStore = create<ThemeState & ThemeActions>()((set) => ({
     set((s) => ({ ...historyPatch(s), formatProps: removePrefix(s.formatProps, `${getVisualScope(visualId)}.${sectionId}`) })),
   resetVisualFormat: (visualId) =>
     set((s) => ({ ...historyPatch(s), formatProps: removePrefix(s.formatProps, `${getVisualScope(visualId)}.`) })),
+  resetTypography: () =>
+    set((s) => ({
+      ...historyPatch(s),
+      formatProps: {
+        ...removeTypographyFormatProps(s.formatProps),
+        ...typographyDefaultsToFormatProps(s.typographyDefaults),
+      },
+    })),
   setSelectedVisual: (vid) => set({ selectedVisual: vid }),
   setThemeName:     (name) => set({ themeName: name }),
   setVisualTitle:   (visualId, title) =>
@@ -384,7 +402,7 @@ export const useThemeStore = create<ThemeState & ThemeActions>()((set) => ({
       customCanvasBackground: null,
       canvasBackgroundMode: 'theme',
       visualBackgroundMode: 'theme',
-      formatProps: { ...DEFAULT_FORMAT_PROPS },
+      formatProps: typographyDefaultsToFormatProps(s.typographyDefaults),
       visualTitles: {},
     })),
 }))

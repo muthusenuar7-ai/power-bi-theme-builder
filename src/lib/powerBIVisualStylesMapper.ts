@@ -586,11 +586,9 @@ function scatterCards(ctx: MapperContext): VisualStyleCards {
 }
 
 function pieCards(scope: 'pie' | 'donut', ctx: MapperContext): VisualStyleCards {
-  const fill = firstColor(ctx.fp, [`${scope}.slices.color.fill`, `${scope}.slices.color.color`], ctx.primary)
   return {
     legend: [legendCard(scope, ctx)],
     labels: [pieLabelCard(scope, ctx)],
-    dataPoint: [dataPointCard(ctx, fill, `${scope}.slices`)],
     slices: [
       cleanObject({
         startAngle: numOf(ctx.fp, `${scope}.slices.rotation`, 0),

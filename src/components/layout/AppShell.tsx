@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Upload, Download, Undo2, Redo2, Home, RotateCcw } from 'lucide-react'
+import { Upload, Download, Undo2, Redo2, Home, RotateCcw, LayoutDashboard } from 'lucide-react'
 import { downloadThemeJSON, parseImportedThemeJSON } from '@/lib/themeGenerator'
 import { useCSSSync, useThemeStore } from '@/store/themeStore'
 import { LeftMenu } from './LeftMenu'
@@ -12,6 +12,14 @@ import { DashboardCanvas } from '@/components/canvas/DashboardCanvas'
 export function AppShell() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [navStatus, setNavStatus] = useState<string | null>(null)
+  const [returnTo, setReturnTo] = useState<string | null>(null)
+
+  // Read on the client only — avoids the Next.js Suspense requirement that
+  // comes with useSearchParams() on this otherwise-static page.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    setReturnTo(new URLSearchParams(window.location.search).get('returnTo'))
+  }, [])
   const themeName = useThemeStore((s) => s.themeName)
   const setThemeName = useThemeStore((s) => s.setThemeName)
   const applyImportedTheme = useThemeStore((s) => s.applyImportedTheme)
@@ -26,9 +34,22 @@ export function AppShell() {
   // it is mounted so the inner panels own their own scrolling. Other routes
   // (landing, /icons, /layout-builder) scroll normally because this class is
   // only present on /editor.
+  //
+  // The lock is asserted on mount and removed on unmount. A `pageshow` guard
+  // re-asserts it when THIS page is restored from the browser back/forward
+  // (bfcache) cache — without it a restored editor could paint unlocked. The
+  // unmount cleanup is the single source of truth for removing the class, so
+  // it can never leak onto the landing / other routes when the user navigates
+  // away (verified: body has no `app-locked` class on any non-editor route).
   useEffect(() => {
-    document.body.classList.add('app-locked')
-    return () => document.body.classList.remove('app-locked')
+    const lock = () => document.body.classList.add('app-locked')
+    const onPageShow = () => lock()
+    lock()
+    window.addEventListener('pageshow', onPageShow)
+    return () => {
+      window.removeEventListener('pageshow', onPageShow)
+      document.body.classList.remove('app-locked')
+    }
   }, [])
 
   function exportJson() {
@@ -167,6 +188,13 @@ export function AppShell() {
               {navStatus ?? 'Theme ready'}
             </span>
           </div>
+
+          {returnTo === '/layout-builder' && (
+            <Link className="nav-btn accent" href="/layout-builder" title="Return to the Layout Builder">
+              <LayoutDashboard size={13} strokeWidth={2} />
+              Return to Layout Builder
+            </Link>
+          )}
 
           <Link className="nav-btn" href="/" title="Back to home">
             <Home size={13} strokeWidth={2} />

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Icon Vault — BI &amp; Dashboard Icon Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --ink:#15161b;
+    --ink-soft:#22242c;
+    --paper:#f6f4ee;
+    --card:#ffffff;
+    --line:#e4e0d4;
+    --line-soft:#ebe8de;
+    --muted:#8a887f;
+    --text:#1c1b18;
+    --gold:#c8963c;
+    --gold-soft:#e9d3a3;
+    --radius:14px;
+    --shadow: 0 1px 2px rgba(20,18,10,.04), 0 8px 24px -12px rgba(20,18,10,.12);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--gold-soft); }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    background:
+      radial-gradient(1100px 480px at 85% -10%, #2b2e39 0%, transparent 60%),
+      linear-gradient(180deg, var(--ink) 0%, var(--ink-soft) 100%);
+    color:#f4f2ea;
+    padding:64px 6vw 46px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::after{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:42px 42px;
+    mask-image:radial-gradient(circle at 80% 10%, black, transparent 70%);
+    pointer-events:none;
+  }
+  .hero-inner{ position:relative; max-width:1180px; margin:0 auto; }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--gold-soft);
+    border:1px solid rgba(232,208,150,.35);
+    padding:6px 12px; border-radius:999px;
+    background:rgba(232,208,150,.06);
+  }
+  .eyebrow .dot{width:5px;height:5px;border-radius:50%;background:var(--gold);}
+  h1.title{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(38px, 5.4vw, 68px);
+    line-height:1.02;
+    letter-spacing:-.01em;
+    margin:22px 0 14px;
+    max-width:820px;
+  }
+  h1.title em{ font-style:italic; font-weight:500; color:var(--gold-soft); }
+  .hero-sub{
+    max-width:600px;
+    font-size:16.5px; line-height:1.6;
+    color:#c9c7bd;
+    margin:0 0 34px;
+  }
+  .stats{ display:flex; flex-wrap:wrap; gap:0; border-top:1px solid rgba(255,255,255,.12); max-width:900px; }
+  .stat{ padding:16px 28px 4px 0; margin-right:28px; border-right:1px solid rgba(255,255,255,.12); }
+  .stat:last-child{ border-right:none; }
+  .stat b{ font-family:'Fraunces',serif; font-size:26px; font-weight:600; display:block; color:#fff; }
+  .stat span{ font-size:12px; color:#9a988e; text-transform:uppercase; letter-spacing:.07em; }
+
+  /* ---------- TOOLBAR ---------- */
+  .toolbar{
+    position:sticky; top:0; z-index:40;
+    background:rgba(246,244,238,.94);
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--line);
+    padding:16px 6vw;
+  }
+  .toolbar-inner{ max-width:1180px; margin:0 auto; }
+  .row1{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+  .search{ flex:1 1 260px; position:relative; }
+  .search input{
+    width:100%; padding:11px 14px 11px 38px;
+    border-radius:10px; border:1px solid var(--line);
+    background:var(--card); font-family:inherit; font-size:14.5px; color:var(--text);
+    outline:none; transition:border-color .15s;
+  }
+  .search input:focus{ border-color:var(--gold); }
+  .search svg{ position:absolute; left:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--muted); }
+
+  .mode-toggle{ display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--card); }
+  .mode-toggle button{
+    border:none; background:transparent; padding:10px 14px; font:inherit; font-size:13px; font-weight:600;
+    color:var(--muted); cursor:pointer; display:flex; align-items:center; gap:6px; transition:.15s;
+  }
+  .mode-toggle button.active{ background:var(--ink); color:#f4f2ea; }
+  .mode-toggle button + button{ border-left:1px solid var(--line); }
+
+  .color-controls{ display:none; align-items:center; gap:8px; }
+  .color-controls.show{ display:flex; }
+  .color-controls input[type=color]{
+    width:34px; height:34px; border-radius:9px; border:1px solid var(--line); padding:2px; background:var(--card); cursor:pointer;
+  }
+  .swatch-preset{
+    width:22px; height:22px; border-radius:50%; border:1px solid rgba(0,0,0,.08); cursor:pointer; padding:0;
+    box-shadow:0 0 0 2px var(--paper);
+  }
+  .swatch-preset.active{ box-shadow:0 0 0 2px var(--paper), 0 0 0 3.5px var(--ink); }
+
+  .btn-ghost{
+    border:1px solid var(--line); background:var(--card); border-radius:10px; padding:10px 14px;
+    font:inherit; font-size:13px; font-weight:600; color:var(--text); cursor:pointer; display:flex; gap:7px; align-items:center;
+    transition:.15s;
+  }
+  .btn-ghost:hover{ border-color:var(--ink); }
+  .btn-ghost svg{ width:15px; height:15px; }
+  .btn-gold{
+    border:1px solid var(--gold); background:var(--gold); color:#241a06; border-radius:10px; padding:10px 16px;
+    font:inherit; font-size:13px; font-weight:700; cursor:pointer; display:flex; gap:7px; align-items:center;
+  }
+  .btn-gold:hover{ filter:brightness(1.05); }
+
+  .pills{ display:flex; gap:8px; flex-wrap:wrap; }
+  .pill{
+    border:1px solid var(--line); background:var(--card); border-radius:999px; padding:8px 14px;
+    font:inherit; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; white-space:nowrap;
+    display:flex; align-items:center; gap:6px; transition:.15s;
+  }
+  .pill .n{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted); opacity:.7; }
+  .pill:hover{ border-color:var(--ink); color:var(--text); }
+  .pill.active{ background:var(--ink); border-color:var(--ink); color:#f4f2ea; }
+  .pill.active .n{ color:var(--gold-soft); opacity:1; }
+
+  /* ---------- GRID ---------- */
+  main{ max-width:1180px; margin:0 auto; padding:36px 6vw 90px; }
+  .section-head{ display:flex; align-items:baseline; gap:12px; margin:38px 0 16px; }
+  .section-head:first-child{ margin-top:6px; }
+  .section-head h2{ font-family:'Fraunces',serif; font-weight:600; font-size:21px; margin:0; }
+  .section-head .count{ font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted); white-space:nowrap; }
+  .section-head .rule{ flex:1; height:1px; background:var(--line); }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(150px,1fr));
+    gap:14px;
+  }
+
+  .tile{
+    position:relative;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:14px 12px 12px;
+    display:flex; flex-direction:column; align-items:center;
+    text-align:center;
+    transition:border-color .15s, box-shadow .15s, transform .15s;
+  }
+  .tile:hover{ border-color:var(--ink); box-shadow:var(--shadow); transform:translateY(-2px); }
+
+  .tile-index{
+    position:absolute; top:10px; left:12px;
+    font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); opacity:.55;
+  }
+  .tile-recolor{
+    position:absolute; top:9px; right:9px;
+    width:18px; height:18px; border-radius:50%;
+    border:1.5px solid rgba(255,255,255,.9); box-shadow:0 0 0 1px var(--line);
+    cursor:pointer; opacity:0; transition:opacity .15s;
+  }
+  .tile:hover .tile-recolor, .tile-recolor.touched{ opacity:1; }
+  .tile-recolor input{
+    position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; margin:0; padding:0;
+  }
+  .tile-fixed-badge{
+    position:absolute; top:10px; right:10px;
+    font-family:'JetBrains Mono',monospace; font-size:8.5px; color:var(--muted); opacity:.5; letter-spacing:.05em;
+  }
+
+  .icon-stage{
+    width:56px; height:56px; display:flex; align-items:center; justify-content:center;
+    margin:10px 0 10px;
+  }
+  .icon-stage svg{ width:32px; height:32px; }
+
+  .tile-name{ font-size:12.5px; font-weight:600; line-height:1.3; }
+  .tile-cat{ font-size:10.5px; color:var(--muted); margin-top:2px; text-transform:uppercase; letter-spacing:.05em; }
+
+  .tile-actions{
+    display:flex; gap:6px; margin-top:12px; width:100%;
+    opacity:0; transform:translateY(3px); transition:.15s;
+  }
+  .tile:hover .tile-actions{ opacity:1; transform:none; }
+  .tile-actions button{
+    flex:1; font:inherit; font-size:10.5px; font-weight:700; letter-spacing:.03em;
+    border:1px solid var(--line); background:var(--paper); border-radius:7px; padding:6px 0; cursor:pointer;
+    color:var(--text); transition:.12s;
+  }
+  .tile-actions button:hover{ background:var(--ink); color:#f4f2ea; border-color:var(--ink); }
+
+  .empty{ text-align:center; padding:70px 20px; color:var(--muted); }
+  .empty b{ display:block; font-family:'Fraunces',serif; font-size:19px; color:var(--text); margin-bottom:6px; font-weight:600;}
+
+  footer{
+    border-top:1px solid var(--line); padding:26px 6vw 40px; max-width:1180px; margin:0 auto;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    font-size:12.5px; color:var(--muted);
+  }
+  footer b{ color:var(--text); }
+
+  @media (max-width:640px){
+    .hero{padding:44px 5vw 34px;}
+    .grid{ grid-template-columns:repeat(auto-fill, minmax(128px,1fr)); }
+    .icon-stage{ width:46px; height:46px; }
+    .icon-stage svg{ width:27px; height:27px; }
+  }
+
+  :focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <span class="eyebrow"><span class="dot"></span>Student Resource Portal</span>
+    <h1 class="title">The <em>Icon Vault</em><br>for BI &amp; Dashboards</h1>
+    <p class="hero-sub">A curated icon set built for the reports your dashboards actually need — Finance, HR, Retail, FMCG, Automobile, Logistics, Airlines, Currencies and Country Flags. Recolor any glyph to match your palette, then export as SVG or PNG.</p>
+    <div class="stats">
+      <div class="stat"><b id="statIcons">--</b><span>Icons</span></div>
+      <div class="stat"><b id="statCats">--</b><span>Categories</span></div>
+      <div class="stat"><b>SVG · PNG</b><span>Export formats</span></div>
+      <div class="stat"><b>Free</b><span>For students</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <div class="row1">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+        <input id="searchInput" type="text" placeholder="Search icons — e.g. invoice, forklift, rupee, japan…">
+      </div>
+
+      <div class="mode-toggle" id="modeToggle">
+        <button data-mode="mixed" class="active" type="button">Curated Mix</button>
+        <button data-mode="single" type="button">Solid Color</button>
+      </div>
+
+      <div class="color-controls" id="colorControls">
+        <input type="color" id="globalColor" value="#4F46E5">
+        <button class="swatch-preset" style="background:#4F46E5" data-c="#4F46E5" title="Indigo" type="button"></button>
+        <button class="swatch-preset" style="background:#0D9488" data-c="#0D9488" title="Teal" type="button"></button>
+        <button class="swatch-preset" style="background:#C8963C" data-c="#C8963C" title="Gold" type="button"></button>
+        <button class="swatch-preset" style="background:#15161B" data-c="#15161B" title="Ink" type="button"></button>
+      </div>
+
+      <button class="btn-ghost" id="resetColors" type="button" title="Reset all custom colors">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2-9.4L1 10"/></svg>
+        Reset
+      </button>
+
+      <button class="btn-gold" id="downloadZip" type="button" title="Download all icons currently shown, as SVG">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download set
+      </button>
+    </div>
+
+    <div class="pills" id="pills"></div>
+  </div>
+</div>
+
+<main id="main">
+  <div id="content"></div>
+</main>
+
+<footer>
+  <span>Curated for the <b>BI &amp; Dashboards</b> student portal — built for reports, decks and internal tools.</span>
+  <span>Line icons render on <b>currentColor</b> and recolor freely. Flags carry fixed national colors and print as-is.</span>
+</footer>
+
+<script>
+/* ============ CATEGORY DEFINITIONS ============ */
+const CATS = [
+  {key:'finance',   label:'Finance & Accounting'},
+  {key:'currency',  label:'Currency & Exchange'},
+  {key:'hr',        label:'HR & People'},
+  {key:'sales',     label:'Sales & Marketing'},
+  {key:'retail',    label:'Retail & Point of Sale'},
+  {key:'fmcg',      label:'FMCG & Consumer Goods'},
+  {key:'ops',       label:'Operations & Supply Chain'},
+  {key:'logistics', label:'Logistics & Shipping'},
+  {key:'auto',      label:'Automobile & Manufacturing'},
+  {key:'travel',    label:'Airline & Travel'},
+  {key:'tech',      label:'Technology & IT'},
+  {key:'products',  label:'Products & Inventory'},
+  {key:'analytics', label:'Analytics & KPIs'},
+  {key:'general',   label:'General & Communication'},
+  {key:'flags',     label:'Country Flags'},
+  {key:'metrics',   label:'Growth, Variance & Financial Metrics'},
+];
+
+/* ============ ICON DEFINITIONS ============ */
+const ICONS = [
+// ---------------- FINANCE ----------------
+{id:'money-bag',cat:'finance',name:'Money Bag',svg:'<path d="M9 3h6l1.4 4H7.6L9 3Z"/><path d="M6.2 7h11.6l1.6 11.3A2.4 2.4 0 0 1 17 21H7a2.4 2.4 0 0 1-2.4-2.7L6.2 7Z"/><text x="12" y="16.5" font-size="6.5" text-anchor="middle" stroke="none" fill="currentColor">$</text>'},
+{id:'coin-stack',cat:'finance',name:'Coin Stack',svg:'<ellipse cx="12" cy="17.5" rx="7" ry="2.3"/><ellipse cx="12" cy="13.5" rx="7" ry="2.3"/><ellipse cx="12" cy="9.5" rx="7" ry="2.3"/><path d="M5 9.5v8M19 9.5v8"/>'},
+{id:'wallet',cat:'finance',name:'Wallet',svg:'<rect x="2.5" y="6" width="19" height="13" rx="2.2"/><path d="M2.5 10h19"/><rect x="14.5" y="12" width="4.5" height="3.4" rx="0.6"/>'},
+{id:'credit-card',cat:'finance',name:'Credit Card',svg:'<rect x="2" y="5" width="20" height="14" rx="2.2"/><line x1="2" y1="9.5" x2="22" y2="9.5"/><line x1="5.5" y1="15" x2="10" y2="15"/>'},
+{id:'invoice',cat:'finance',name:'Invoice',svg:'<path d="M6 2.5h12v19l-3-1.8-3 1.8-3-1.8-3 1.8V2.5Z"/><line x1="9" y1="7.5" x2="15" y2="7.5"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="14.5" x2="13" y2="14.5"/>'},
+{id:'piggy-bank',cat:'finance',name:'Piggy Bank',svg:'<path d="M4.5 12.2c0-3.2 3.1-5.7 7-5.7 2 0 3.7.6 4.9 1.7L19 7l0.8 2.7-1.8 0.9c0.3.6.5 1.3.5 2 0 3.2-3.5 5.7-7.5 5.7-.6 0-1.2 0-1.8-.1L7.4 21H5.2l1.4-2.7C4.7 17 4.5 15.6 4.5 12.2Z"/><circle cx="15.3" cy="10.3" r="0.7" fill="currentColor" stroke="none"/><line x1="7.3" y1="13.5" x2="7.3" y2="15.5"/>'},
+{id:'bank',cat:'finance',name:'Bank',svg:'<path d="M3 10.5l9-6 9 6"/><line x1="3" y1="10.5" x2="21" y2="10.5"/><line x1="5.5" y1="10.5" x2="5.5" y2="19"/><line x1="10" y1="10.5" x2="10" y2="19"/><line x1="14" y1="10.5" x2="14" y2="19"/><line x1="18.5" y1="10.5" x2="18.5" y2="19"/><line x1="3" y1="19" x2="21" y2="19"/><line x1="2.5" y1="21.5" x2="21.5" y2="21.5"/>'},
+{id:'calculator',cat:'finance',name:'Calculator',svg:'<rect x="5.5" y="2" width="13" height="20" rx="2"/><rect x="7.7" y="4.2" width="8.6" height="4" rx="0.5"/><circle cx="8.3" cy="12.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="12" cy="12.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="15.7" cy="12.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="8.3" cy="16.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="12" cy="16.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="15.7" cy="16.5" r="0.9" fill="currentColor" stroke="none"/>'},
+{id:'safe',cat:'finance',name:'Safe / Vault',svg:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="12" x2="14.5" y2="10"/><circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none"/><line x1="6" y1="4" x2="6" y2="7"/><line x1="18" y1="4" x2="18" y2="7"/>'},
+{id:'banknote',cat:'finance',name:'Banknote',svg:'<rect x="2" y="6" width="20" height="12" rx="1.5"/><circle cx="12" cy="12" r="3"/><circle cx="5" cy="9" r="0.6" fill="currentColor" stroke="none"/><circle cx="19" cy="15" r="0.6" fill="currentColor" stroke="none"/>'},
+
+// ---------------- CURRENCY ----------------
+{id:'currency-usd',cat:'currency',name:'US Dollar',svg:'<circle cx="12" cy="12" r="9.4"/><text x="12" y="16.3" font-size="11" text-anchor="middle" stroke="none" fill="currentColor" font-family="Arial,sans-serif">$</text>'},
+{id:'currency-eur',cat:'currency',name:'Euro',svg:'<circle cx="12" cy="12" r="9.4"/><text x="12" y="16.3" font-size="10" text-anchor="middle" stroke="none" fill="currentColor" font-family="Arial,sans-serif">&#8364;</text>'},
+{id:'currency-gbp',cat:'currency',name:'British Pound',svg:'<circle cx="12" cy="12" r="9.4"/><text x="12" y="16.3" font-size="10" text-anchor="middle" stroke="none" fill="currentColor" font-family="Arial,sans-serif">&#163;</text>'},
+{id:'currency-jpy',cat:'currency',name:'Japanese Yen',svg:'<circle cx="12" cy="12" r="9.4"/><text x="12" y="16.3" font-size="10" text-anchor="middle" stroke="none" fill="currentColor" font-family="Arial,sans-serif">&#165;</text>'},
+{id:'currency-inr',cat:'currency',name:'Indian Rupee',svg:'<circle cx="12" cy="12" r="9.4"/><text x="12" y="16.3" font-size="10" text-anchor="middle" stroke="none" fill="currentColor" font-family="Arial,sans-serif">&#8377;</text>'},
+{id:'currency-cny',cat:'currency',name:'Chinese Yuan',svg:'<circle cx="12" cy="12" r="9.4"/><text x="12" y="16.3" font-size="10" text-anchor="middle" stroke="none" fill="currentColor" font-family="Arial,sans-serif">&#20803;</text>'},
+{id:'currency-exchange',cat:'currency',name:'Currency Exchange',svg:'<path d="M3 8h14"/><path d="M13 4l4 4-4 4"/><path d="M21 16H7"/><path d="M11 12l-4 4 4 4"/>'},
+{id:'currency-bitcoin',cat:'currency',name:'Bitcoin',svg:'<circle cx="12" cy="12" r="9.4"/><text x="12" y="16.3" font-size="10" text-anchor="middle" stroke="none" fill="currentColor" font-family="Arial,sans-serif">&#8383;</text>'},
+
+// ---------------- HR ----------------
+{id:'user',cat:'hr',name:'User',svg:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>'},
+{id:'team',cat:'hr',name:'Team',svg:'<circle cx="8.3" cy="9" r="3"/><circle cx="16" cy="10.3" r="2.6"/><path d="M2.5 20.5c0-3.5 2.6-6.3 5.8-6.3s5.8 2.8 5.8 6.3"/><path d="M14.3 20.5c0-2.6 1.7-4.8 4-5.6"/>'},
+{id:'id-card',cat:'hr',name:'ID Card',svg:'<rect x="2" y="5" width="20" height="14" rx="2.2"/><circle cx="8.2" cy="12" r="2.4"/><line x1="13" y1="9.7" x2="19" y2="9.7"/><line x1="13" y1="14.3" x2="19" y2="14.3"/>'},
+{id:'handshake',cat:'hr',name:'Handshake',svg:'<path d="M2.5 11.5l4-3 3 2 3.5-2 4 2.5"/><path d="M8 9.8l3 3.7-2 1.8-3-3.5"/><path d="M21.5 11.5l-4-3-2.5 1.7"/>'},
+{id:'briefcase',cat:'hr',name:'Briefcase',svg:'<rect x="3" y="8" width="18" height="12.5" rx="2"/><path d="M8.3 8V6.2a2 2 0 0 1 2-2h3.4a2 2 0 0 1 2 2V8"/><line x1="3" y1="13.3" x2="21" y2="13.3"/>'},
+{id:'headset',cat:'hr',name:'Headset',svg:'<path d="M4 13.5v-1.7a8 8 0 0 1 16 0v1.7"/><rect x="3" y="13.5" width="4" height="6" rx="1.5"/><rect x="17" y="13.5" width="4" height="6" rx="1.5"/>'},
+{id:'graduation-cap',cat:'hr',name:'Graduation Cap',svg:'<path d="M2 9l10-5 10 5-10 5-10-5Z"/><path d="M6.5 11.2v4.5c0 1.6 2.5 2.8 5.5 2.8s5.5-1.2 5.5-2.8v-4.5"/><line x1="22" y1="9" x2="22" y2="15"/>'},
+{id:'calendar-hr',cat:'hr',name:'Calendar',svg:'<rect x="3" y="4.3" width="18" height="17.2" rx="2"/><line x1="3" y1="9.3" x2="21" y2="9.3"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>'},
+{id:'performance-review',cat:'hr',name:'Performance Review',svg:'<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><line x1="13" y1="8" x2="17" y2="8"/><line x1="13" y1="10" x2="17" y2="10"/><path d="M6 16c0-1.8 1.5-3 3-3s3 1.2 3 3"/><path d="M14 17l2 2 4-4"/>'},
+{id:'org-chart',cat:'hr',name:'Org Chart',svg:'<rect x="9" y="3" width="6" height="4" rx="1"/><rect x="2" y="15" width="6" height="4" rx="1"/><rect x="9" y="15" width="6" height="4" rx="1"/><rect x="16" y="15" width="6" height="4" rx="1"/><path d="M12 7v4M5 15v-4h14v4"/>'},
+
+// ---------------- SALES ----------------
+{id:'megaphone',cat:'sales',name:'Megaphone',svg:'<path d="M3 10v4h3l6.5 4V6L6 10H3Z"/><path d="M15 9.3a3 3 0 0 1 0 5.4"/>'},
+{id:'target',cat:'sales',name:'Target',svg:'<circle cx="12" cy="12" r="8.7"/><circle cx="12" cy="12" r="5.2"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/>'},
+{id:'funnel',cat:'sales',name:'Sales Funnel',svg:'<path d="M3 4h18l-7 8.3v6L10 20v-7.7L3 4Z"/>'},
+{id:'shopping-cart',cat:'sales',name:'Shopping Cart',svg:'<circle cx="9.5" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/><path d="M2 3h3l2.3 12a2 2 0 0 0 2 1.6h8a2 2 0 0 0 2-1.6L21 8H6.2"/>'},
+{id:'trending-up',cat:'sales',name:'Trending Up',svg:'<polyline points="3,16.5 9,10.5 13,14.5 21,5.5"/><polyline points="15,5.5 21,5.5 21,11.5"/>'},
+{id:'star',cat:'sales',name:'Rating Star',svg:'<path d="M12 2.5l3 6.4 6.8 1-4.9 4.9 1.2 6.9-6.1-3.4-6.1 3.4 1.2-6.9-4.9-4.9 6.8-1 3-6.4Z"/>'},
+{id:'email',cat:'sales',name:'Campaign Email',svg:'<rect x="2" y="5" width="20" height="14" rx="2.2"/><path d="M3 6.3l9 7 9-7"/>'},
+{id:'price-tag',cat:'sales',name:'Price Tag',svg:'<path d="M20.3 12.4l-7.9 7.9-9.8-9.8V2.5h8l9.7 9.9Z"/><circle cx="7" cy="7" r="1.3" fill="currentColor" stroke="none"/>'},
+{id:'customer-heart',cat:'sales',name:'Customer Loyalty',svg:'<path d="M12 20.5s-7.5-4.6-9.5-9.3C1 7.5 3 4 6.5 4c2 0 3.5 1.2 4.3 2.7C11.6 5.2 13.1 4 15.1 4 18.6 4 20.6 7.5 19.5 11.2 17.5 15.9 12 20.5 12 20.5Z"/>'},
+{id:'thumbs-up',cat:'sales',name:'Customer Satisfaction',svg:'<path d="M7 22V11"/><path d="M7 11l3-8a2 2 0 0 1 3.7 1.4L12 9h6.5a2 2 0 0 1 1.9 2.7l-2.4 7A2 2 0 0 1 16.1 20H10a3 3 0 0 1-3-3"/>'},
+
+// ---------------- RETAIL ----------------
+{id:'cash-register',cat:'retail',name:'Cash Register',svg:'<rect x="3" y="10" width="18" height="10" rx="1.5"/><rect x="6" y="4" width="12" height="6" rx="1"/><rect x="8" y="13" width="8" height="3"/><circle cx="7" cy="18" r="0.8" fill="currentColor" stroke="none"/>'},
+{id:'pos-terminal',cat:'retail',name:'POS Terminal',svg:'<rect x="5" y="3" width="14" height="18" rx="2"/><rect x="7.5" y="5.5" width="9" height="6" rx="0.5"/><line x1="8" y1="15" x2="10" y2="15"/><line x1="12" y1="15" x2="14" y2="15"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="12" y1="18" x2="14" y2="18"/>'},
+{id:'barcode-scanner-gun',cat:'retail',name:'Barcode Scanner',svg:'<path d="M6 2l10 10"/><path d="M18 2a2.8 2.8 0 0 1 0 4l-2 2-4-4 2-2a2.8 2.8 0 0 1 4 0Z"/><path d="M14 8L4 18v3h3l10-10"/>'},
+{id:'loyalty-card',cat:'retail',name:'Loyalty Card',svg:'<rect x="2" y="6" width="20" height="13" rx="2"/><path d="M12 10.8l1.5 3 3.3.3-2.5 2.2.8 3.2-3.1-1.8-3.1 1.8.8-3.2-2.5-2.2 3.3-.3 1.5-3Z"/>'},
+{id:'self-checkout',cat:'retail',name:'Self Checkout',svg:'<rect x="4" y="3" width="16" height="12" rx="1.5"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="4" y1="19" x2="20" y2="19"/><line x1="8" y1="15" x2="6" y2="19"/><line x1="16" y1="15" x2="18" y2="19"/>'},
+{id:'returns-exchange',cat:'retail',name:'Returns & Exchange',svg:'<path d="M4 12a8 8 0 0 1 13.7-5.7L20 8"/><path d="M20 3v5h-5"/><path d="M20 12a8 8 0 0 1-13.7 5.7L4 16"/><path d="M4 21v-5h5"/>'},
+{id:'mall',cat:'retail',name:'Shopping Mall',svg:'<path d="M3 9l9-6 9 6"/><rect x="5" y="9" width="14" height="12"/><path d="M9 21v-6h6v6"/><line x1="12" y1="9" x2="12" y2="12"/>'},
+{id:'aisle-shelf',cat:'retail',name:'Store Aisle',svg:'<rect x="2" y="3" width="20" height="18" rx="1"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="2" y1="15" x2="22" y2="15"/><rect x="5" y="4.5" width="3" height="3"/><rect x="10" y="4.5" width="3" height="3"/><rect x="15" y="4.5" width="3" height="3"/><rect x="5" y="10.5" width="3" height="3"/><rect x="10" y="10.5" width="3" height="3"/>'},
+{id:'shopping-trolley',cat:'retail',name:'Shopping Trolley',svg:'<circle cx="9.5" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/><path d="M2 3h3l2.3 12a2 2 0 0 0 2 1.6h8a2 2 0 0 0 2-1.6L21 8H6.2"/><line x1="8" y1="8" x2="8" y2="12.5"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="16" y1="8" x2="16" y2="12.5"/>'},
+
+// ---------------- FMCG ----------------
+{id:'shopping-bag',cat:'fmcg',name:'Shopping Bag',svg:'<path d="M6 8h12l1 12.3a2 2 0 0 1-2 2.2H7a2 2 0 0 1-2-2.2L6 8Z"/><path d="M9 8V6.2a3 3 0 0 1 6 0V8"/>'},
+{id:'store',cat:'fmcg',name:'Storefront',svg:'<path d="M3 9l1-5.3h16L21 9"/><path d="M4 9v10.5h16V9"/><path d="M9.3 19.5v-5.3h5.4v5.3"/><line x1="3" y1="9" x2="21" y2="9"/>'},
+{id:'gift-box',cat:'fmcg',name:'Gift / SKU Box',svg:'<rect x="4" y="8.3" width="16" height="12" rx="1"/><path d="M4 8.3V6.2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2.1"/><line x1="12" y1="4.2" x2="12" y2="20.3"/><path d="M12 8.3c-1.3-3-5.5-3-5.5.5s4.2 2 5.5-.5Z"/><path d="M12 8.3c1.3-3 5.5-3 5.5.5s-4.2 2-5.5-.5Z"/>'},
+{id:'bottle',cat:'fmcg',name:'Product Bottle',svg:'<path d="M10 2h4v3l2 2.2v13a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-13l2-2.2V2Z"/><line x1="8" y1="12" x2="16" y2="12"/>'},
+{id:'basket',cat:'fmcg',name:'Basket',svg:'<path d="M4 9h16l-1.5 10.2a2 2 0 0 1-2 1.8H7.5a2 2 0 0 1-2-1.8L4 9Z"/><path d="M8.2 9l1-5M15.8 9l-1-5M12 9V4.5"/>'},
+{id:'discount',cat:'fmcg',name:'Discount',svg:'<line x1="5" y1="19" x2="19" y2="5"/><circle cx="7.5" cy="7.5" r="2.3"/><circle cx="16.5" cy="16.5" r="2.3"/>'},
+{id:'leaf',cat:'fmcg',name:'Organic / Fresh',svg:'<path d="M5 21c0-9.4 6.3-15.5 15.5-15.5C20.5 14.7 14.4 21 5 21Z"/><path d="M5 21c3.3-3.3 6.6-6.6 12.6-12.6"/>'},
+{id:'calendar-check',cat:'fmcg',name:'Expiry Date',svg:'<rect x="3" y="4.3" width="18" height="17.2" rx="2"/><line x1="3" y1="9.3" x2="21" y2="9.3"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><polyline points="8,14.5 10.8,17.3 16,12"/>'},
+{id:'shelf-stock',cat:'fmcg',name:'Shelf Stock',svg:'<rect x="3" y="4" width="18" height="16" rx="1"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="16" x2="21" y2="16"/><rect x="5.5" y="5.5" width="2.5" height="3.5"/><rect x="9.5" y="5.5" width="2.5" height="3.5"/><rect x="5.5" y="11.5" width="2.5" height="3.5"/>'},
+{id:'fresh-produce',cat:'fmcg',name:'Fresh Produce',svg:'<path d="M12 8c-3.3 0-5.5 2.6-5.5 6.2 0 3.4 2.3 6.3 4.6 6.3.9 0 1.3-.5 1.9-.5s1 .5 1.9.5c2.3 0 4.6-3 4.6-6.5C19.5 10.4 17 8 14 8c-.7 0-1.3.2-2 .5-.7-.3-1.3-.5-2-.5Z"/><path d="M12.3 8c0-1.6.9-3 2.2-3.5"/>'},
+
+// ---------------- OPERATIONS ----------------
+{id:'truck',cat:'ops',name:'Delivery Truck',svg:'<rect x="1" y="8" width="13" height="9" rx="1.2"/><path d="M14 11.2h4l4 3.6v2.2h-8v-5.8Z"/><circle cx="6" cy="19" r="1.8"/><circle cx="18" cy="19" r="1.8"/>'},
+{id:'warehouse',cat:'ops',name:'Warehouse',svg:'<path d="M2 10.5l10-6.3 10 6.3v10.5H2V10.5Z"/><path d="M9 21v-7h6v7"/>'},
+{id:'box',cat:'ops',name:'Shipping Box',svg:'<path d="M12 3l9 5-9 5-9-5 9-5Z"/><path d="M3 8v9l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="22"/>'},
+{id:'barcode',cat:'ops',name:'Barcode',svg:'<line x1="3" y1="4" x2="3" y2="20"/><line x1="6.2" y1="4" x2="6.2" y2="20"/><line x1="9" y1="4" x2="9" y2="20"/><line x1="13" y1="4" x2="13" y2="20"/><line x1="16.2" y1="4" x2="16.2" y2="20"/><line x1="19" y1="4" x2="19" y2="20"/><line x1="21.5" y1="4" x2="21.5" y2="20"/>'},
+{id:'gear',cat:'ops',name:'Process Gear',svg:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.1 5.1l2.1 2.1M16.8 16.8l2.1 2.1M5.1 18.9L7.2 16.8M16.8 7.2l2.1-2.1"/>'},
+{id:'recycle',cat:'ops',name:'Recycle Loop',svg:'<path d="M9.5 4.5L13 6.7l-1.7 3.1"/><path d="M13 6.7c-3.3-1.9-7.5.5-7.5 4.6 0 1 .2 1.8.6 2.6"/><path d="M17.5 8.7l1.6 3.4-3.6.8"/><path d="M19.1 12.1c1.9 3.3-.4 7.5-4.5 7.6-1 0-1.9-.2-2.7-.6"/><path d="M8 18.9l-3.5-.5.7-3.5"/><path d="M4.5 18.4c-1.9-3.3.4-7.5 4.5-7.6"/>'},
+{id:'pin',cat:'ops',name:'Route Pin',svg:'<path d="M12 21.5s7.2-7.4 7.2-13a7.2 7.2 0 0 0-14.4 0c0 5.6 7.2 13 7.2 13Z"/><circle cx="12" cy="8.8" r="2.6"/>'},
+{id:'clipboard-check',cat:'ops',name:'Stock Check',svg:'<rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><polyline points="8,13 10.8,16 16,10.3"/>'},
+{id:'supply-chain-link',cat:'ops',name:'Supply Chain Link',svg:'<rect x="2" y="8" width="8" height="8" rx="3"/><rect x="14" y="8" width="8" height="8" rx="3"/><line x1="10" y1="12" x2="14" y2="12"/>'},
+{id:'pallet-load',cat:'ops',name:'Pallet Load',svg:'<rect x="3" y="14" width="18" height="3" rx="0.5"/><rect x="3" y="19" width="18" height="2" rx="0.5"/><line x1="6" y1="17" x2="6" y2="19"/><line x1="12" y1="17" x2="12" y2="19"/><line x1="18" y1="17" x2="18" y2="19"/><rect x="6" y="4" width="12" height="9" rx="1"/>'},
+
+// ---------------- LOGISTICS ----------------
+{id:'shipping-container',cat:'logistics',name:'Shipping Container',svg:'<rect x="2" y="7" width="20" height="11" rx="1"/><line x1="2" y1="12.5" x2="22" y2="12.5"/><line x1="7" y1="7" x2="7" y2="18"/><line x1="12" y1="7" x2="12" y2="18"/><line x1="17" y1="7" x2="17" y2="18"/>'},
+{id:'cargo-ship',cat:'logistics',name:'Cargo Ship',svg:'<path d="M3 15h18l-2 5H5l-2-5Z"/><rect x="9" y="7" width="6" height="6"/><line x1="12" y1="3" x2="12" y2="7"/><line x1="6" y1="15" x2="6" y2="12"/><line x1="18" y1="15" x2="18" y2="12"/>'},
+{id:'forklift',cat:'logistics',name:'Forklift',svg:'<rect x="3" y="12" width="7" height="6" rx="1"/><circle cx="5.5" cy="20" r="1.5"/><circle cx="9" cy="20" r="1.5"/><line x1="10" y1="8" x2="10" y2="18"/><line x1="10" y1="8" x2="15" y2="8"/><line x1="15" y1="8" x2="15" y2="14"/><rect x="15" y="12" width="5" height="4"/>'},
+{id:'delivery-route',cat:'logistics',name:'Delivery Route',svg:'<path d="M4 19c4-6 5-11 9-11s5 5 9 11"/><circle cx="4" cy="19" r="1.3" fill="currentColor" stroke="none"/><circle cx="20" cy="19" r="1.3" fill="currentColor" stroke="none"/>'},
+{id:'customs-stamp',cat:'logistics',name:'Customs Clearance',svg:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12l2.5 2.5L16 9"/>'},
+{id:'crane-port',cat:'logistics',name:'Port Crane',svg:'<line x1="4" y1="21" x2="4" y2="6"/><line x1="4" y1="6" x2="18" y2="6"/><line x1="14" y1="6" x2="14" y2="3"/><line x1="18" y1="6" x2="18" y2="11"/><rect x="15" y="11" width="6" height="4"/><line x1="4" y1="12" x2="9" y2="12"/>'},
+{id:'tracking-pin',cat:'logistics',name:'Shipment Tracking',svg:'<path d="M12 21.5s7.2-7.4 7.2-13a7.2 7.2 0 0 0-14.4 0c0 5.6 7.2 13 7.2 13Z"/><rect x="9" y="6.3" width="6" height="5" rx="0.6"/>'},
+{id:'package-scan',cat:'logistics',name:'Package Scan',svg:'<rect x="4" y="6" width="16" height="12" rx="1.5"/><path d="M4 6l8 5 8-5"/><line x1="2" y1="3" x2="2" y2="7"/><line x1="22" y1="3" x2="22" y2="7"/><line x1="2" y1="3" x2="6" y2="3"/><line x1="18" y1="3" x2="22" y2="3"/>'},
+
+// ---------------- AUTOMOBILE ----------------
+{id:'car',cat:'auto',name:'Car',svg:'<path d="M3 13l2-6h14l2 6"/><path d="M3 13h18v5.3H3V13Z"/><circle cx="7.3" cy="18.3" r="1.8"/><circle cx="16.7" cy="18.3" r="1.8"/>'},
+{id:'double-gear',cat:'auto',name:'Manufacturing',svg:'<circle cx="8.5" cy="8.5" r="3"/><circle cx="16" cy="15.5" r="3"/><path d="M8.5 3v2M8.5 12v2M3.5 8.5h2M11.5 8.5h2M16 10.5v2M16 20.5v2M11 15.5h2M19 15.5h2"/>'},
+{id:'factory',cat:'auto',name:'Factory',svg:'<path d="M3 21V10.5l5 2.8v-2.8l5 2.8v-2.8l5 2.8V21H3Z"/><line x1="3" y1="21" x2="21" y2="21"/>'},
+{id:'spanner',cat:'auto',name:'Maintenance',svg:'<path d="M16.5 3.2a4 4 0 0 0-5.3 5.1L4 15.5v3.3h3.3l7.2-7.2a4 4 0 0 0 5.1-5.3l-2.8 2.8-2-2 2.7-2.9Z"/>'},
+{id:'steering-wheel',cat:'auto',name:'Steering Wheel',svg:'<circle cx="12" cy="12" r="8.7"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="3.3" x2="12" y2="10"/><line x1="6" y1="16" x2="10.3" y2="13.3"/><line x1="18" y1="16" x2="13.7" y2="13.3"/>'},
+{id:'fuel-pump',cat:'auto',name:'Fuel Pump',svg:'<rect x="3" y="4" width="10" height="17" rx="1"/><line x1="3" y1="9.3" x2="13" y2="9.3"/><path d="M13 9.3h3l3 3v5.7a1.5 1.5 0 0 1-3 0v-2.5h-3"/>'},
+{id:'ev-battery',cat:'auto',name:'EV Battery',svg:'<rect x="2" y="8" width="18" height="8" rx="1.5"/><line x1="22" y1="10.5" x2="22" y2="13.5"/><line x1="7" y1="8" x2="7" y2="16"/><path d="M13 10l-2 2.5h2.5L11.5 15"/>'},
+{id:'speed-gauge',cat:'auto',name:'Speed Gauge',svg:'<path d="M4 18a8 8 0 0 1 16 0"/><line x1="12" y1="18" x2="16" y2="11.5"/><circle cx="12" cy="18" r="1.1" fill="currentColor" stroke="none"/><path d="M4 18h2M18 18h2M6.3 12.3l1.4 1.4M17.7 12.3l-1.4 1.4"/>'},
+{id:'assembly-line',cat:'auto',name:'Assembly Line',svg:'<line x1="2" y1="17" x2="22" y2="17"/><circle cx="5" cy="19" r="1"/><circle cx="19" cy="19" r="1"/><rect x="7" y="9" width="6" height="6" rx="1"/><path d="M13 12h3l2 3"/>'},
+{id:'tire',cat:'auto',name:'Tire',svg:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/><line x1="12" y1="3.5" x2="12" y2="6.5"/><line x1="12" y1="17.5" x2="12" y2="20.5"/><line x1="3.5" y1="12" x2="6.5" y2="12"/><line x1="17.5" y1="12" x2="20.5" y2="12"/>'},
+
+// ---------------- AIRLINE & TRAVEL ----------------
+{id:'airplane',cat:'travel',name:'Airplane',svg:'<path d="M21 16v-2l-8-5V4.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V18l-2.5 2v1.5L12 20l3.5 1.5V20L13 18v-4.5L21 16Z"/>'},
+{id:'boarding-pass',cat:'travel',name:'Boarding Pass',svg:'<path d="M3 6h18v9H9l-3 3v-3H3V6Z"/><line x1="6" y1="9.5" x2="15" y2="9.5"/><line x1="6" y1="12.5" x2="12" y2="12.5"/><circle cx="18" cy="9.5" r="1.3"/>'},
+{id:'suitcase',cat:'travel',name:'Suitcase',svg:'<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M9 8V5.5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5.5V8"/><line x1="3" y1="13.5" x2="21" y2="13.5"/><line x1="12" y1="8" x2="12" y2="20"/>'},
+{id:'control-tower',cat:'travel',name:'Airport Tower',svg:'<path d="M9 21V11l3-7 3 7v10"/><line x1="7" y1="21" x2="17" y2="21"/><line x1="8.5" y1="14" x2="15.5" y2="14"/><line x1="10.5" y1="7" x2="13.5" y2="7"/>'},
+{id:'passport',cat:'travel',name:'Passport',svg:'<rect x="5" y="2" width="14" height="20" rx="1.5"/><circle cx="12" cy="9" r="3"/><line x1="8" y1="16" x2="16" y2="16"/><line x1="8" y1="18.5" x2="16" y2="18.5"/>'},
+{id:'luggage-tag',cat:'travel',name:'Luggage Tag',svg:'<path d="M13 3l8 8-9 9-8-8a2 2 0 0 1 0-2.8L11 2.3a2 2 0 0 1 2 .7Z"/><circle cx="9" cy="9" r="1.6"/>'},
+{id:'flight-path',cat:'travel',name:'Flight Path',svg:'<path d="M3 19c5-9 7-15 9-15s4 6 9 15"/><circle cx="12" cy="4" r="1.3" fill="currentColor" stroke="none"/><path d="M9 15l3 4 3-4"/>'},
+{id:'check-in-desk',cat:'travel',name:'Check-in Desk',svg:'<rect x="2" y="13" width="20" height="7" rx="1"/><line x1="4" y1="13" x2="4" y2="9"/><line x1="4" y1="9" x2="20" y2="9"/><line x1="20" y1="9" x2="20" y2="13"/><circle cx="12" cy="16.3" r="0.8" fill="currentColor" stroke="none"/>'},
+
+// ---------------- TECH ----------------
+{id:'laptop',cat:'tech',name:'Laptop',svg:'<rect x="4" y="4" width="16" height="10.3" rx="1.2"/><path d="M2 18.5h20l-2-4.2H4l-2 4.2Z"/>'},
+{id:'server',cat:'tech',name:'Server',svg:'<rect x="3" y="3" width="18" height="6.3" rx="1.2"/><rect x="3" y="10.7" width="18" height="6.3" rx="1.2"/><circle cx="7" cy="6.2" r="0.8" fill="currentColor" stroke="none"/><circle cx="7" cy="13.8" r="0.8" fill="currentColor" stroke="none"/>'},
+{id:'cloud',cat:'tech',name:'Cloud',svg:'<path d="M6.3 17.5a4 4 0 1 1 1.1-7.8A5 5 0 0 1 17 11.2a3.5 3.5 0 0 1-.5 6.3H6.3Z"/>'},
+{id:'database',cat:'tech',name:'Database',svg:'<ellipse cx="12" cy="5.3" rx="8" ry="2.8"/><path d="M4 5.3v13.4c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8V5.3"/><path d="M4 12c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8"/>'},
+{id:'wifi',cat:'tech',name:'Connectivity',svg:'<path d="M2.5 8.8a15 15 0 0 1 19 0"/><path d="M5.8 12.8a10 10 0 0 1 12.4 0"/><path d="M9.2 16.7a5 5 0 0 1 5.6 0"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/>'},
+{id:'shield-lock',cat:'tech',name:'Data Security',svg:'<path d="M12 2.3l7.7 3.6v5.6c0 4.7-3.3 7.9-7.7 9.4-4.4-1.5-7.7-4.7-7.7-9.4V5.9L12 2.3Z"/><rect x="9" y="11" width="6" height="5" rx="1"/><path d="M10 11V9.2a2 2 0 0 1 4 0V11"/>'},
+{id:'cpu',cat:'tech',name:'Processor',svg:'<rect x="7" y="7" width="10" height="10" rx="1"/><rect x="10" y="10" width="4" height="4"/><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/>'},
+{id:'bot',cat:'tech',name:'Automation Bot',svg:'<rect x="5" y="8.3" width="14" height="10" rx="2"/><circle cx="9" cy="13.3" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="13.3" r="1.2" fill="currentColor" stroke="none"/><line x1="12" y1="4.3" x2="12" y2="8.3"/><circle cx="12" cy="3.3" r="1"/>'},
+{id:'mobile-app',cat:'tech',name:'Mobile App',svg:'<rect x="7" y="2" width="10" height="20" rx="2"/><line x1="7" y1="18" x2="17" y2="18"/><circle cx="12" cy="20" r="0.6" fill="currentColor" stroke="none"/>'},
+{id:'api-network',cat:'tech',name:'API Network',svg:'<circle cx="5" cy="6" r="2.3"/><circle cx="19" cy="6" r="2.3"/><circle cx="12" cy="18" r="2.3"/><path d="M7 7.3L11 16M17 7.3L13 16M7.3 6h9.4"/>'},
+
+// ---------------- PRODUCTS ----------------
+{id:'layers',cat:'products',name:'Product Layers',svg:'<path d="M12 2.5l9 4.8-9 4.8-9-4.8 9-4.8Z"/><path d="M3 12l9 4.8 9-4.8"/><path d="M3 16l9 4.8 9-4.8"/>'},
+{id:'archive',cat:'products',name:'Inventory Archive',svg:'<rect x="3" y="4" width="18" height="5" rx="1"/><rect x="4" y="9" width="16" height="11" rx="1"/><line x1="10" y1="13.3" x2="14" y2="13.3"/>'},
+{id:'cube',cat:'products',name:'3D Product',svg:'<path d="M12 2.3l8 4.6v10.2L12 21.7l-8-4.6V6.9l8-4.6Z"/><path d="M4 6.9l8 4.6 8-4.6"/><line x1="12" y1="11.5" x2="12" y2="21.7"/>'},
+{id:'qr-code',cat:'products',name:'QR Code',svg:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14.5" y="14.5" width="2.5" height="2.5" fill="currentColor" stroke="none"/><rect x="18.5" y="18.5" width="2.5" height="2.5" fill="currentColor" stroke="none"/><rect x="14.5" y="18.5" width="2.5" height="2.5"/>'},
+{id:'clipboard-list',cat:'products',name:'Product List',svg:'<rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><line x1="8" y1="12.3" x2="16" y2="12.3"/><line x1="8" y1="16" x2="16" y2="16"/>'},
+{id:'package-check',cat:'products',name:'Order Fulfilled',svg:'<path d="M12 3l9 5-9 5-9-5 9-5Z"/><path d="M3 8v9l9 5 9-5V8"/><polyline points="9,13.3 11,15.3 15,10.8"/>'},
+{id:'scale',cat:'products',name:'Quality Balance',svg:'<line x1="12" y1="3" x2="12" y2="21"/><line x1="6" y1="7" x2="18" y2="7"/><path d="M3 13a3 3 0 0 0 6 0L6 7l-3 6Z"/><path d="M15 13a3 3 0 0 0 6 0l-3-6-3 6Z"/>'},
+{id:'ruler',cat:'products',name:'Measurement',svg:'<rect x="3" y="8" width="18" height="8" rx="1.2"/><line x1="7" y1="8" x2="7" y2="11"/><line x1="11" y1="8" x2="11" y2="11"/><line x1="15" y1="8" x2="15" y2="11"/><line x1="19" y1="8" x2="19" y2="11"/>'},
+{id:'returns-arrow',cat:'products',name:'Product Returns',svg:'<path d="M3 12a9 9 0 1 1 3 6.7"/><polyline points="3,17 3,12 8,12"/>'},
+{id:'product-catalog',cat:'products',name:'Product Catalog',svg:'<rect x="4" y="3" width="16" height="18" rx="1.5"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/>'},
+
+// ---------------- ANALYTICS ----------------
+{id:'bar-chart',cat:'analytics',name:'Bar Chart',svg:'<line x1="4" y1="21" x2="4" y2="10"/><line x1="10" y1="21" x2="10" y2="5"/><line x1="16" y1="21" x2="16" y2="13"/><line x1="21" y1="21" x2="3" y2="21"/>'},
+{id:'line-chart',cat:'analytics',name:'Line Chart',svg:'<polyline points="3,17 8,11 12,14 21,4"/><line x1="3" y1="21" x2="21" y2="21"/>'},
+{id:'pie-chart',cat:'analytics',name:'Pie Chart',svg:'<circle cx="12" cy="12" r="8.7"/><path d="M12 3.3v8.7l6.7 3.9"/>'},
+{id:'gauge-kpi',cat:'analytics',name:'KPI Gauge',svg:'<path d="M4 18a8 8 0 0 1 16 0"/><line x1="12" y1="18" x2="16" y2="11.3"/><circle cx="12" cy="18" r="1.3" fill="currentColor" stroke="none"/>'},
+{id:'magnifier-analytics',cat:'analytics',name:'Data Insight',svg:'<circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/><polyline points="6.3,11 8.7,8.3 10.7,10 13.5,6.3"/>'},
+{id:'filter-data',cat:'analytics',name:'Data Filter',svg:'<path d="M4 4h16l-6 8.3v6L10 20v-7.7L4 4Z"/>'},
+{id:'clock-kpi',cat:'analytics',name:'Time Tracked',svg:'<circle cx="12" cy="12" r="8.7"/><polyline points="12,7.3 12,12 15.7,14"/>'},
+{id:'flag-milestone',cat:'analytics',name:'Milestone',svg:'<line x1="5" y1="3" x2="5" y2="21"/><path d="M5 4h13l-3 4 3 4H5Z"/>'},
+{id:'dashboard-grid',cat:'analytics',name:'Dashboard Grid',svg:'<rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/>'},
+{id:'forecast-trend',cat:'analytics',name:'Forecast Trend',svg:'<path d="M3 17l6-6 4 4 8-8"/><path d="M21 3v6h-6"/>'},
+
+// ---------------- GENERAL ----------------
+{id:'lightbulb',cat:'general',name:'Idea',svg:'<path d="M9.5 18.5h5"/><path d="M10.3 21.3h3.4"/><path d="M12 3.2a6.2 6.2 0 0 0-3.7 11.2c.6.5 1 1.2 1.1 2h5.2a3 3 0 0 1 1.1-2A6.2 6.2 0 0 0 12 3.2Z"/>'},
+{id:'rocket',cat:'general',name:'Growth Launch',svg:'<path d="M12 2.3c3.1 1 5.2 4.2 5.2 8.3 0 4.2-2.1 7.3-5.2 10.4-3.1-3.1-5.2-6.2-5.2-10.4 0-4.1 2.1-7.3 5.2-8.3Z"/><circle cx="12" cy="9.3" r="2"/><path d="M8 16.3l-3 3M16 16.3l3 3"/>'},
+{id:'globe',cat:'general',name:'Global / Region',svg:'<circle cx="12" cy="12" r="8.7"/><line x1="3.3" y1="12" x2="20.7" y2="12"/><path d="M12 3.3a14 14 0 0 1 0 17.4 14 14 0 0 1 0-17.4Z"/>'},
+{id:'chat-bubble',cat:'general',name:'Feedback',svg:'<path d="M4 4h16v12.3H8.3L4 20V4Z"/>'},
+{id:'bell',cat:'general',name:'Notification',svg:'<path d="M6 10a6 6 0 0 1 12 0c0 4.8 2 5.8 2 5.8H4s2-1 2-5.8Z"/><path d="M10 19.5a2 2 0 0 0 4 0"/>'},
+{id:'checklist',cat:'general',name:'Checklist',svg:'<rect x="3" y="4" width="18" height="16" rx="2"/><polyline points="7,9.3 8.5,10.8 11,7.8"/><line x1="13" y1="9.3" x2="18" y2="9.3"/><polyline points="7,15.3 8.5,16.8 11,13.8"/><line x1="13" y1="15.3" x2="18" y2="15.3"/>'},
+{id:'presentation',cat:'general',name:'Presentation',svg:'<rect x="2" y="3" width="20" height="13" rx="1.2"/><polyline points="6.5,12.3 9.5,8.3 12.5,10.3 16.5,6"/><line x1="12" y1="16" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/>'},
+{id:'trophy',cat:'general',name:'Achievement',svg:'<path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M7 5H4.3v2a3 3 0 0 0 3 3"/><path d="M17 5h2.7v2a3 3 0 0 1-3 3"/><line x1="12" y1="13" x2="12" y2="17.3"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="9" y1="17.3" x2="15" y2="17.3"/>'},
+{id:'document-file',cat:'general',name:'Document',svg:'<path d="M6 2h9l5 5v15H6V2Z"/><path d="M15 2v5h5"/>'},
+{id:'share-network',cat:'general',name:'Share / Network',svg:'<circle cx="6" cy="12" r="2.3"/><circle cx="18" cy="6" r="2.3"/><circle cx="18" cy="18" r="2.3"/><line x1="8" y1="11" x2="16" y2="7"/><line x1="8" y1="13" x2="16" y2="17"/>'},
+
+
+// ---------------- GROWTH, VARIANCE & FINANCIAL METRICS ----------------
+{id:'growth-arrow-up',cat:'metrics',name:'Growth (Increase)',svg:'<line x1="4" y1="20" x2="4" y2="9"/><line x1="4" y1="9" x2="1" y2="12"/><line x1="4" y1="9" x2="7" y2="12"/><path d="M9 20V13a3 3 0 0 1 6 0v7"/><path d="M18 20V6a3 3 0 0 1 3 0"/>'},
+{id:'decline-arrow-down',cat:'metrics',name:'Decline (Decrease)',svg:'<line x1="4" y1="4" x2="4" y2="15"/><line x1="4" y1="15" x2="1" y2="12"/><line x1="4" y1="15" x2="7" y2="12"/><path d="M9 4v11a3 3 0 0 0 6 0V4"/><path d="M18 4v14a3 3 0 0 1-3 3"/>'},
+{id:'increase-caret',cat:'metrics',name:'Increase',svg:'<circle cx="12" cy="12" r="9.4"/><polyline points="7.5,13.8 12,9 16.5,13.8"/>'},
+{id:'decrease-caret',cat:'metrics',name:'Decrease',svg:'<circle cx="12" cy="12" r="9.4"/><polyline points="7.5,10.2 12,15 16.5,10.2"/>'},
+{id:'percent-change',cat:'metrics',name:'Percent Change',svg:'<line x1="5" y1="19" x2="19" y2="5"/><circle cx="7.5" cy="7.5" r="2.3"/><circle cx="16.5" cy="16.5" r="2.3"/><line x1="17" y1="4" x2="20" y2="4"/><line x1="18.5" y1="2.5" x2="18.5" y2="5.5"/>'},
+{id:'variance-bars',cat:'metrics',name:'Variance',svg:'<line x1="4" y1="21" x2="20" y2="21"/><rect x="3" y="10" width="4" height="8"/><rect x="10" y="4" width="4" height="14"/><rect x="17" y="13" width="4" height="5"/><line x1="4" y1="12" x2="20" y2="9"/>'},
+{id:'margin-layers',cat:'metrics',name:'Margin',svg:'<rect x="4" y="3" width="16" height="18" rx="1.5"/><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/>'},
+{id:'gross-margin-wedge',cat:'metrics',name:'Gross Margin',svg:'<circle cx="12" cy="12" r="9.4"/><path d="M12 12V2.6A9.4 9.4 0 0 1 20 17.3Z"/>'},
+{id:'target-growth',cat:'metrics',name:'Growth Target',svg:'<circle cx="10" cy="14" r="7"/><circle cx="10" cy="14" r="3.6"/><path d="M14.8 9.2 20 4M15 4h5v5"/>'},
+{id:'compound-growth',cat:'metrics',name:'Compound Growth',svg:'<polyline points="3,18 7,14 11,16 15,9 21,3"/><path d="M3 21h18"/><circle cx="7" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="11" cy="16" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1" fill="currentColor" stroke="none"/>'},
+{id:'delta-change',cat:'metrics',name:'Delta / Change',svg:'<path d="M12 3l9 18H3L12 3Z"/><text x="12" y="17" font-size="7" text-anchor="middle" stroke="none" fill="currentColor" font-family="Arial,sans-serif">&#916;</text>'},
+{id:'receivables',cat:'metrics',name:'Accounts Receivable',svg:'<path d="M6 2.5h12v19l-3-1.8-3 1.8-3-1.8-3 1.8V2.5Z"/><path d="M9 11h3.5a2 2 0 1 0 0-4H9"/><line x1="9" y1="14.5" x2="14" y2="14.5"/><line x1="16" y1="6" x2="19" y2="6"/><line x1="17.5" y1="4.5" x2="17.5" y2="7.5"/>'},
+{id:'payables',cat:'metrics',name:'Accounts Payable',svg:'<path d="M6 2.5h12v19l-3-1.8-3 1.8-3-1.8-3 1.8V2.5Z"/><path d="M9 11h3.5a2 2 0 1 0 0-4H9"/><line x1="9" y1="14.5" x2="14" y2="14.5"/><line x1="16" y1="6.5" x2="19" y2="6.5"/>'},
+{id:'cash-inflow',cat:'metrics',name:'Cash Inflow',svg:'<circle cx="12" cy="12" r="9.4"/><line x1="12" y1="7" x2="12" y2="17"/><polyline points="8.5,10.5 12,7 15.5,10.5"/>'},
+{id:'cash-outflow',cat:'metrics',name:'Cash Outflow',svg:'<circle cx="12" cy="12" r="9.4"/><line x1="12" y1="7" x2="12" y2="17"/><polyline points="8.5,13.5 12,17 15.5,13.5"/>'},
+{id:'aging-report',cat:'metrics',name:'Aging Report',svg:'<circle cx="12" cy="12" r="9.4"/><polyline points="12,7 12,12 15.5,14"/>'},
+{id:'net-profit',cat:'metrics',name:'Net Profit',svg:'<circle cx="12" cy="12" r="9.4"/><path d="M8 15V9l4 4 4-4v6"/>'},
+{id:'break-even',cat:'metrics',name:'Break-even',svg:'<line x1="3" y1="12" x2="21" y2="12"/><polyline points="3,20 12,12 21,4"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/>'},
+{id:'budget-vs-actual',cat:'metrics',name:'Budget vs Actual',svg:'<line x1="3" y1="21" x2="21" y2="21"/><rect x="4" y="6" width="5" height="15"/><rect x="14" y="10" width="5" height="11"/>'},
+{id:'ratio-scale',cat:'metrics',name:'Ratio / Comparison',svg:'<rect x="3" y="10" width="7" height="4" rx="1"/><rect x="14" y="6" width="7" height="4" rx="1"/><rect x="14" y="14" width="7" height="4" rx="1"/><line x1="10" y1="12" x2="14" y2="8"/><line x1="10" y1="12" x2="14" y2="16"/>'},
+{id:'runway-forecast',cat:'metrics',name:'Cash Runway',svg:'<line x1="3" y1="20" x2="21" y2="20"/><path d="M4 18c3-1 5-4 6-8s3-6 6-6 5 3 5 8"/><path d="M17 12l4-2v4Z"/>'},
+// ---------------- COUNTRY FLAGS (fixed colors, viewBox 0 0 24 16) ----------------
+{id:'flag-usa',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'United States',svg:'<rect width="24" height="16" fill="#B22234"/><rect y="2.28" width="24" height="2.28" fill="#fff"/><rect y="6.85" width="24" height="2.28" fill="#fff"/><rect y="11.42" width="24" height="2.28" fill="#fff"/><rect width="10" height="9.14" fill="#3C3B6E"/><circle cx="2" cy="2" r="0.5" fill="#fff"/><circle cx="5" cy="2" r="0.5" fill="#fff"/><circle cx="8" cy="2" r="0.5" fill="#fff"/><circle cx="3.5" cy="4.2" r="0.5" fill="#fff"/><circle cx="6.5" cy="4.2" r="0.5" fill="#fff"/><circle cx="2" cy="6.4" r="0.5" fill="#fff"/><circle cx="5" cy="6.4" r="0.5" fill="#fff"/><circle cx="8" cy="6.4" r="0.5" fill="#fff"/>'},
+{id:'flag-uk',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'United Kingdom',svg:'<rect width="24" height="16" fill="#012169"/><path d="M0 0L24 16M24 0L0 16" stroke="#fff" stroke-width="3"/><path d="M0 0L24 16M24 0L0 16" stroke="#C8102E" stroke-width="1.2"/><path d="M12 0V16M0 8H24" stroke="#fff" stroke-width="5"/><path d="M12 0V16M0 8H24" stroke="#C8102E" stroke-width="2.2"/>'},
+{id:'flag-india',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'India',svg:'<rect width="24" height="5.33" fill="#FF9933"/><rect y="5.33" width="24" height="5.33" fill="#fff"/><rect y="10.66" width="24" height="5.34" fill="#138808"/><circle cx="12" cy="8" r="2" fill="none" stroke="#000080" stroke-width="0.4"/><circle cx="12" cy="8" r="0.3" fill="#000080"/>'},
+{id:'flag-uae',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'United Arab Emirates',svg:'<rect width="24" height="16" fill="#fff"/><rect width="6" height="16" fill="#FF0000"/><rect x="6" width="18" height="5.33" fill="#00732F"/><rect x="6" y="5.33" width="18" height="5.33" fill="#fff"/><rect x="6" y="10.66" width="18" height="5.34" fill="#000"/>'},
+{id:'flag-china',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'China',svg:'<rect width="24" height="16" fill="#DE2910"/><path d="M5 2l0.9 2.8H8.8L6.4 6.4 7.3 9.2 5 7.5 2.7 9.2 3.6 6.4 1.2 4.8H4.1Z" fill="#FFDE00"/><circle cx="9.5" cy="1.6" r="0.5" fill="#FFDE00"/><circle cx="11" cy="3.2" r="0.5" fill="#FFDE00"/><circle cx="11" cy="5.6" r="0.5" fill="#FFDE00"/><circle cx="9.5" cy="7.2" r="0.5" fill="#FFDE00"/>'},
+{id:'flag-germany',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'Germany',svg:'<rect width="24" height="5.33" fill="#000"/><rect y="5.33" width="24" height="5.33" fill="#DD0000"/><rect y="10.66" width="24" height="5.34" fill="#FFCE00"/>'},
+{id:'flag-france',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'France',svg:'<rect width="8" height="16" fill="#0055A4"/><rect x="8" width="8" height="16" fill="#fff"/><rect x="16" width="8" height="16" fill="#EF4135"/>'},
+{id:'flag-japan',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'Japan',svg:'<rect width="24" height="16" fill="#fff"/><circle cx="12" cy="8" r="4.2" fill="#BC002D"/>'},
+{id:'flag-canada',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'Canada',svg:'<rect width="6" height="16" fill="#FF0000"/><rect x="6" width="12" height="16" fill="#fff"/><rect x="18" width="6" height="16" fill="#FF0000"/><path d="M12 4l0.8 2 2-0.3-1 1.7 1.6 1.1-2 0.4 0.2 2-1.6-1.3-1.6 1.3 0.2-2-2-0.4 1.6-1.1-1-1.7 2 0.3Z" fill="#FF0000"/>'},
+{id:'flag-australia',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'Australia',svg:'<rect width="24" height="16" fill="#00247D"/><rect width="10" height="7" fill="#00247D"/><path d="M0 0L10 7M10 0L0 7" stroke="#fff" stroke-width="1.4"/><path d="M0 0L10 7M10 0L0 7" stroke="#C8102E" stroke-width="0.6"/><path d="M5 0V7M0 3.5H10" stroke="#fff" stroke-width="2"/><path d="M5 0V7M0 3.5H10" stroke="#C8102E" stroke-width="0.9"/><circle cx="17" cy="4" r="0.6" fill="#fff"/><circle cx="20" cy="9" r="0.6" fill="#fff"/><circle cx="15" cy="11" r="0.6" fill="#fff"/><circle cx="19" cy="13" r="0.6" fill="#fff"/><circle cx="12" cy="8" r="1" fill="#fff"/>'},
+{id:'flag-singapore',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'Singapore',svg:'<rect width="24" height="8" fill="#ED2939"/><rect y="8" width="24" height="8" fill="#fff"/><circle cx="6" cy="4" r="2.3" fill="#fff"/><circle cx="7" cy="4" r="1.9" fill="#ED2939"/><circle cx="10" cy="1.8" r="0.4" fill="#fff"/><circle cx="11.5" cy="3" r="0.4" fill="#fff"/><circle cx="11.5" cy="5" r="0.4" fill="#fff"/><circle cx="10" cy="6.2" r="0.4" fill="#fff"/><circle cx="9" cy="4" r="0.4" fill="#fff"/>'},
+{id:'flag-saudi',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'Saudi Arabia',svg:'<rect width="24" height="16" fill="#006C35"/><line x1="4" y1="6.5" x2="18" y2="6.5" stroke="#fff" stroke-width="1"/><line x1="4" y1="11" x2="19" y2="11" stroke="#fff" stroke-width="1.4"/><line x1="19" y1="9" x2="19" y2="13" stroke="#fff" stroke-width="1.4"/>'},
+{id:'flag-brazil',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'Brazil',svg:'<rect width="24" height="16" fill="#009739"/><path d="M12 2l10 6-10 6-10-6Z" fill="#FEDD00"/><circle cx="12" cy="8" r="3" fill="#012169"/>'},
+{id:'flag-south-korea',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'South Korea',svg:'<rect width="24" height="16" fill="#fff"/><circle cx="12" cy="8" r="3.4" fill="#fff"/><path d="M12 4.6a1.7 1.7 0 0 1 0 3.4 1.7 1.7 0 0 0 0 3.4 3.4 3.4 0 0 0 0-6.8Z" fill="#CD2E3A"/><path d="M12 4.6a1.7 1.7 0 0 0 0 3.4 1.7 1.7 0 0 1 0 3.4 3.4 3.4 0 0 1 0-6.8Z" fill="#0047A0"/>'},
+{id:'flag-italy',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'Italy',svg:'<rect width="8" height="16" fill="#009246"/><rect x="8" width="8" height="16" fill="#fff"/><rect x="16" width="8" height="16" fill="#CE2B37"/>'},
+{id:'flag-spain',cat:'flags',flag:true,viewBox:'0 0 24 16',name:'Spain',svg:'<rect width="24" height="16" fill="#AA151B"/><rect y="4" width="24" height="8" fill="#F1BF00"/>'},
+];
+
+const PALETTE = ['#4F46E5','#7C3AED','#2563EB','#0891B2','#0D9488','#059669','#65A30D','#D97706','#EA580C','#E11D48','#DB2777','#475569'];
+
+/* ============ STATE ============ */
+let mode = 'mixed';        // 'mixed' | 'single'
+let singleColor = '#4F46E5';
+let activeCat = 'all';
+let query = '';
+const overrides = {}; // id -> color
+
+/* ============ HELPERS ============ */
+function svgWrap(icon, color, size){
+  size = size || 128;
+  const vb = icon.viewBox || '0 0 24 24';
+  if(icon.flag){
+    const h = Math.round(size * 16 / 24);
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb + '" width="' + size + '" height="' + h + '">' + icon.svg + '<rect x="0.5" y="0.5" width="23" height="15" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="0.6"/></svg>';
+  }
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb + '" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:' + color + '">' + icon.svg + '</svg>';
+}
+
+function getColor(icon, idx){
+  if(icon.flag) return null;
+  if(overrides[icon.id]) return overrides[icon.id];
+  if(mode === 'single') return singleColor;
+  return PALETTE[idx % PALETTE.length];
+}
+
+function slug(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
+
+function triggerDownload(filename, blob){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
+
+function downloadSVG(icon, color){
+  const str = svgWrap(icon, color, 128);
+  triggerDownload(slug(icon.name) + '.svg', new Blob([str],{type:'image/svg+xml'}));
+}
+
+function downloadPNG(icon, color){
+  const size = 512;
+  const str = svgWrap(icon, color, size);
+  const svgBlob = new Blob([str],{type:'image/svg+xml'});
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  img.onload = function(){
+    const h = icon.flag ? Math.round(size*16/24) : size;
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img,0,0,size,h);
+    canvas.toBlob(function(blob){ triggerDownload(slug(icon.name) + '.png', blob); }, 'image/png');
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+}
+
+/* ============ RENDER ============ */
+const pillsEl = document.getElementById('pills');
+const contentEl = document.getElementById('content');
+
+function buildPills(){
+  const counts = {};
+  ICONS.forEach(function(i){ counts[i.cat] = (counts[i.cat]||0)+1; });
+  const all = [{key:'all',label:'All Icons'}].concat(CATS);
+  pillsEl.innerHTML = all.map(function(c){
+    const n = c.key==='all' ? ICONS.length : (counts[c.key]||0);
+    return '<button class="pill ' + (activeCat===c.key?'active':'') + '" data-cat="' + c.key + '" type="button">' + c.label + ' <span class="n">' + n + '</span></button>';
+  }).join('');
+}
+
+function filteredIcons(){
+  return ICONS.filter(function(i){
+    return (activeCat==='all' || i.cat===activeCat) &&
+      (query==='' || i.name.toLowerCase().indexOf(query)!==-1 || i.cat.indexOf(query)!==-1);
+  });
+}
+
+function tileEl(icon, idx){
+  const isFixed = !!icon.flag;
+  const color = isFixed ? null : getColor(icon, idx);
+  const catLabel = (CATS.find(function(c){return c.key===icon.cat;}) || {label:icon.cat}).label;
+
+  const tile = document.createElement('article');
+  tile.className = 'tile';
+  tile.dataset.id = icon.id;
+
+  const recolorHtml = isFixed
+    ? '<span class="tile-fixed-badge">FIXED</span>'
+    : '<label class="tile-recolor" style="background:' + color + '" title="Recolor this icon"><input type="color" value="' + color + '"></label>';
+
+  tile.innerHTML =
+    '<span class="tile-index">' + String(idx+1).padStart(2,'0') + '</span>' +
+    recolorHtml +
+    '<div class="icon-stage"' + (isFixed ? '' : ' style="color:' + color + '"') + '>' + svgWrap(icon, color, 64) + '</div>' +
+    '<div class="tile-name">' + icon.name + '</div>' +
+    '<div class="tile-cat">' + catLabel + '</div>' +
+    '<div class="tile-actions">' +
+      '<button data-action="svg" type="button">SVG</button>' +
+      '<button data-action="png" type="button">PNG</button>' +
+    '</div>';
+
+  if(!isFixed){
+    const colorInput = tile.querySelector('.tile-recolor input');
+    const swatchLabel = tile.querySelector('.tile-recolor');
+    const stage = tile.querySelector('.icon-stage');
+    colorInput.addEventListener('input', function(e){
+      const c = e.target.value;
+      overrides[icon.id] = c;
+      swatchLabel.style.background = c;
+      swatchLabel.classList.add('touched');
+      stage.style.color = c;
+      stage.innerHTML = svgWrap(icon, c, 64);
+    });
+    colorInput.addEventListener('click', function(e){ e.stopPropagation(); });
+  }
+
+  tile.querySelector('[data-action="svg"]').addEventListener('click', function(){
+    downloadSVG(icon, overrides[icon.id] || color);
+  });
+  tile.querySelector('[data-action="png"]').addEventListener('click', function(){
+    downloadPNG(icon, overrides[icon.id] || color);
+  });
+
+  return tile;
+}
+
+function render(){
+  contentEl.innerHTML = '';
+  const list = filteredIcons();
+
+  if(list.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.innerHTML = '<b>No icons match "' + query + '".</b>Try a different keyword or clear your filters.';
+    contentEl.appendChild(empty);
+    return;
+  }
+
+  if(activeCat === 'all' && query === ''){
+    let counter = 0;
+    CATS.forEach(function(cat){
+      const items = ICONS.filter(function(i){ return i.cat===cat.key; });
+      if(items.length === 0) return;
+      const section = document.createElement('div');
+      const head = document.createElement('div');
+      head.className = 'section-head';
+      head.innerHTML = '<h2>' + cat.label + '</h2><span class="count">' + String(items.length).padStart(2,'0') + ' icons</span><span class="rule"></span>';
+      section.appendChild(head);
+      const g = document.createElement('div');
+      g.className = 'grid';
+      items.forEach(function(icon){ g.appendChild(tileEl(icon, counter)); counter++; });
+      section.appendChild(g);
+      contentEl.appendChild(section);
+    });
+  } else {
+    const g = document.createElement('div');
+    g.className = 'grid';
+    list.forEach(function(icon, idx){ g.appendChild(tileEl(icon, idx)); });
+    contentEl.appendChild(g);
+  }
+}
+
+/* ============ EVENTS ============ */
+document.getElementById('searchInput').addEventListener('input', function(e){
+  query = e.target.value.trim().toLowerCase();
+  render();
+});
+
+pillsEl.addEventListener('click', function(e){
+  const btn = e.target.closest('.pill');
+  if(!btn) return;
+  activeCat = btn.dataset.cat;
+  buildPills();
+  render();
+});
+
+document.getElementById('modeToggle').addEventListener('click', function(e){
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  mode = btn.dataset.mode;
+  document.querySelectorAll('#modeToggle button').forEach(function(b){ b.classList.toggle('active', b===btn); });
+  document.getElementById('colorControls').classList.toggle('show', mode==='single');
+  render();
+});
+
+document.getElementById('globalColor').addEventListener('input', function(e){
+  singleColor = e.target.value;
+  document.querySelectorAll('.swatch-preset').forEach(function(s){ s.classList.remove('active'); });
+  render();
+});
+
+document.querySelectorAll('.swatch-preset').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    singleColor = btn.dataset.c;
+    document.getElementById('globalColor').value = singleColor;
+    document.querySelectorAll('.swatch-preset').forEach(function(s){ s.classList.remove('active'); });
+    btn.classList.add('active');
+    render();
+  });
+});
+
+document.getElementById('resetColors').addEventListener('click', function(){
+  Object.keys(overrides).forEach(function(k){ delete overrides[k]; });
+  render();
+});
+
+document.getElementById('downloadZip').addEventListener('click', async function(){
+  const list = filteredIcons();
+  const zip = new JSZip();
+  list.forEach(function(icon, idx){
+    const color = icon.flag ? null : getColor(icon, idx);
+    zip.file(slug(icon.name) + '.svg', svgWrap(icon, color, 128));
+  });
+  const blob = await zip.generateAsync({type:'blob'});
+  const name = activeCat==='all' ? 'icon-vault-full-set' : ('icon-vault-' + activeCat);
+  triggerDownload(name + '.zip', blob);
+});
+
+/* ============ INIT ============ */
+document.getElementById('statIcons').textContent = ICONS.length;
+document.getElementById('statCats').textContent = CATS.length;
+buildPills();
+render();
+</script>
+</body>
+</html>

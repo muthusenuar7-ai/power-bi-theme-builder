@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datacense — Executive Command Center · 16:9</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+:root{
+  --navy:#0B1F3A; --ink:#081426; --cyan:#00B4D8; --teal:#0093B2; --gold:#F2C811;
+  --green:#2ec27e; --red:#ef5d5d; --amber:#f6a609;
+  --panel:#10263f; --panel2:#15314f; --line:rgba(255,255,255,.08);
+  --txt:#e8eef7; --mut:#8aa2c0; --mut2:#5e7796;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Inter Tight',sans-serif; background:#04080f; color:var(--txt);
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+/* 16:9 stage that scales to fit */
+#viewport{position:relative; width:100vw; height:100vh; display:flex; align-items:center; justify-content:center}
+#stage{
+  width:1920px; height:1080px; transform-origin:center center; position:relative;
+  background:
+    radial-gradient(1400px 700px at 82% -8%, rgba(0,180,216,.10), transparent 60%),
+    radial-gradient(1000px 560px at -8% 112%, rgba(242,200,17,.06), transparent 55%),
+    var(--ink);
+  display:flex; flex-direction:column; overflow:hidden;
+  box-shadow:0 30px 120px rgba(0,0,0,.6);
+}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;gap:18px;padding:18px 34px 14px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:13px}
+.logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--cyan),var(--teal));
+  display:grid;place-items:center;font-family:'Sora';font-weight:800;color:var(--ink);font-size:20px;box-shadow:0 6px 22px rgba(0,180,216,.35)}
+.brand h1{font-family:'Sora';font-size:20px;font-weight:700;letter-spacing:-.3px}
+.brand span{font-size:11.5px;color:var(--mut);letter-spacing:.6px;text-transform:uppercase}
+.hmeta{margin-left:auto;display:flex;gap:26px;align-items:center}
+.hmeta .m{text-align:right}
+.hmeta .m b{font-family:'Sora';font-size:16px;display:block}
+.hmeta .m small{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
+.live{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--green);
+  border:1px solid rgba(46,194,126,.3);padding:6px 12px;border-radius:20px;background:rgba(46,194,126,.08)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(46,194,126,.5)}50%{opacity:.5;box-shadow:0 0 0 5px rgba(46,194,126,0)}}
+
+/* BODY = left rail + content */
+.body{flex:1;display:flex;min-height:0}
+.rail{width:228px;border-right:1px solid var(--line);padding:16px 14px;display:flex;flex-direction:column;gap:6px;background:rgba(8,18,34,.4)}
+.railhdr{font-size:10px;color:var(--mut2);text-transform:uppercase;letter-spacing:.8px;font-weight:700;padding:6px 8px 4px}
+.dtab{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;font-size:13px;font-weight:600;color:var(--mut);cursor:pointer;transition:.16s}
+.dtab svg{width:18px;height:18px}
+.dtab:hover{background:rgba(255,255,255,.04);color:var(--txt)}
+.dtab.active{background:linear-gradient(135deg,rgba(0,180,216,.18),rgba(0,147,178,.1));color:var(--cyan);box-shadow:inset 3px 0 0 var(--cyan)}
+
+.content{flex:1;display:flex;flex-direction:column;min-width:0;padding:14px 22px 18px}
+
+/* SLICER BAR */
+.slicer{display:flex;align-items:center;gap:10px;padding:10px 0 12px;flex-wrap:wrap}
+.slicer .sl-lab{font-size:10px;color:var(--mut2);text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-right:2px}
+.chipset{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:3px}
+.chip{padding:6px 13px;font-size:11.5px;font-weight:600;border-radius:7px;color:var(--mut);cursor:pointer;transition:.15s;white-space:nowrap}
+.chip:hover{color:var(--txt)}
+.chip.on{background:linear-gradient(135deg,var(--cyan),var(--teal));color:var(--ink)}
+.sl-div{width:1px;height:24px;background:var(--line);margin:0 4px}
+.pagepills{margin-left:auto;display:flex;gap:6px}
+.ppill{padding:7px 14px;font-size:11.5px;font-weight:600;border-radius:8px;cursor:pointer;background:var(--panel);border:1px solid var(--line);color:var(--mut);transition:.15s}
+.ppill:hover{border-color:var(--teal);color:var(--txt)}
+.ppill.active{background:var(--gold);color:var(--ink);border-color:transparent}
+.reset{font-size:11px;color:var(--mut2);cursor:pointer;padding:6px 10px;border-radius:7px}
+.reset:hover{color:var(--cyan)}
+
+.ptitle{font-family:'Sora';font-size:17px;font-weight:700;letter-spacing:-.3px;margin:2px 0 1px}
+.psub{font-size:11.5px;color:var(--mut);margin-bottom:10px}
+
+/* the actual report area fills remaining space */
+.report{flex:1;display:flex;flex-direction:column;gap:10px;min-height:0}
+
+/* KPI strip */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.kpi{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:12px;padding:12px 14px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cyan)}
+.kpi.g::before{background:var(--gold)}.kpi.gr::before{background:var(--green)}.kpi.rd::before{background:var(--red)}.kpi.am::before{background:var(--amber)}
+.kpi .lab{font-size:9.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.kpi .val{font-family:'Sora';font-size:21px;font-weight:700;margin:5px 0 3px;letter-spacing:-.5px}
+.kpi .sub{font-size:10px;color:var(--mut2)}
+.chg{font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:2px}
+.chg.up{color:var(--green)}.chg.down{color:var(--red)}
+
+/* chart grid fills rest */
+.grid{display:grid;gap:10px;flex:1;min-height:0}
+.g23{grid-template-columns:1.7fr 1fr}
+.g32{grid-template-columns:1fr 1.7fr}
+.g2{grid-template-columns:1fr 1fr}
+.rows2{grid-template-rows:1fr 1fr}
+.panel{background:linear-gradient(160deg,var(--panel),rgba(21,49,79,.6));border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.panel .ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.panel h3{font-family:'Sora';font-size:13px;font-weight:600}
+.panel .ph small{font-size:10px;color:var(--mut)}
+.tag{font-size:9px;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(0,180,216,.14);color:var(--cyan);text-transform:uppercase;letter-spacing:.4px}
+.cwrap{position:relative;flex:1;min-height:0}
+
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{text-align:left;color:var(--mut);font-weight:600;font-size:9.5px;text-transform:uppercase;letter-spacing:.4px;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:6.5px 8px;border-bottom:1px solid rgba(255,255,255,.04)}
+tr:hover td{background:rgba(0,180,216,.04)}
+td.num{font-family:'JetBrains Mono';text-align:right}
+.pill{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block}
+.pill.ok{background:rgba(46,194,126,.15);color:var(--green)}
+.pill.warn{background:rgba(246,166,9,.15);color:var(--amber)}
+.pill.bad{background:rgba(239,93,93,.15);color:var(--red)}
+.bars-pad{display:flex;flex-direction:column;justify-content:center;flex:1;gap:11px}
+.bar{height:6px;background:rgba(255,255,255,.07);border-radius:6px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;border-radius:6px}
+.barrow{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:1px}
+.gauge-num{font-family:'Sora';font-weight:700}
+.scrollt{flex:1;overflow:auto}
+
+.ratiowrap{flex:1;display:flex;flex-direction:column;justify-content:center;gap:13px}
+
+#ar{position:fixed;left:14px;bottom:12px;font-size:10.5px;color:var(--mut2);z-index:99}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+  <div class="hdr">
+    <div class="brand">
+      <div class="logo">DC</div>
+      <div><h1>Executive Command Center</h1><span>Datacense Analytics · FY 2025–26</span></div>
+    </div>
+    <div class="hmeta">
+      <div class="m"><b id="hConsol">₹842.6 Cr</b><small>Group Revenue YTD</small></div>
+      <div class="m"><b id="hHead">2,847</b><small>Headcount</small></div>
+      <div class="m"><b style="color:var(--green)">+14.2%</b><small>YoY Growth</small></div>
+      <div class="live"><span class="dot"></span> Live · 09:15 IST</div>
+    </div>
+  </div>
+
+  <div class="body">
+    <nav class="rail" id="rail"></nav>
+    <div class="content">
+      <div class="slicer" id="slicer"></div>
+      <div class="ptitle" id="ptitle"></div>
+      <div class="psub" id="psub"></div>
+      <div class="report" id="report"></div>
+    </div>
+  </div>
+</div></div>
+<div id="ar">1920 × 1080 · 16:9 · scaled <span id="arpct">100%</span></div>
+
+<script>
+/* ================= SCALE TO 16:9 ================= */
+function scaleStage(){
+  const s=document.getElementById('stage');
+  const k=Math.min(window.innerWidth/1920, window.innerHeight/1080);
+  s.style.transform='scale('+k+')';
+  document.getElementById('arpct').textContent=Math.round(k*100)+'%';
+}
+window.addEventListener('resize',scaleStage);
+
+/* ================= DATA ================= */
+const months=['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+const fmtN=v=>v.toLocaleString('en-IN');
+const DATA={
+ sales:{kpi:[
+   {l:'Net Revenue YTD',v:'₹842.6 Cr',c:'+14.2%',up:1,s:'vs ₹737.8 Cr LY',cls:''},
+   {l:'Gross Margin',v:'38.4%',c:'+1.8 pts',up:1,s:'Target 37%',cls:'gr'},
+   {l:'Pipeline Coverage',v:'3.1x',c:'+0.4x',up:1,s:'₹312 Cr open',cls:'g'},
+   {l:'Win Rate',v:'27.6%',c:'-1.1 pts',up:0,s:'1,284 deals',cls:'am'},
+   {l:'Avg Deal Size',v:'₹18.4 L',c:'+6.9%',up:1,s:'Up-market',cls:''}],
+  revTrend:[58,61,64,67,63,71,74,78,72,76,81,77.6],
+  revTarget:[60,62,64,66,68,70,72,74,76,78,80,82],
+  region:{lab:['West','South','North','East'],v:[312,248,176,106.6]},
+  channel:{lab:['Direct Enterprise','Channel Partner','Inside Sales','Online'],v:[44,27,19,10]},
+  funnel:[{s:'Leads',v:18400},{s:'Qualified',v:9200},{s:'Proposal',v:4650},{s:'Negotiation',v:2380},{s:'Won',v:1284}],
+  products:[['Power BI Enterprise','West',186.4,41.2,'+18%','ok'],['Analytics Cloud','South',152.7,37.8,'+11%','ok'],['DataOps Suite','North',98.3,33.1,'+4%','warn'],['Embedded BI','West',76.2,44.6,'+22%','ok'],['Legacy Reporting','East',41.9,21.4,'-9%','bad']]},
+ finance:{kpi:[
+   {l:'EBITDA',v:'₹196.4 Cr',c:'+19.0%',up:1,s:'Margin 23.3%',cls:'gr'},
+   {l:'Net Profit',v:'₹118.2 Cr',c:'+15.4%',up:1,s:'PAT 14%',cls:''},
+   {l:'Operating Cash Flow',v:'₹164.8 Cr',c:'+12%',up:1,s:'OCF/EBITDA 84%',cls:'g'},
+   {l:'GST Liability Q4',v:'₹38.9 Cr',c:'On time',up:1,s:'Credit ₹14.2 Cr',cls:''},
+   {l:'DSO',v:'52 days',c:'+5 days',up:0,s:'Target 45',cls:'rd'}],
+  pl:[['Revenue',842.6,'+14.2%'],['COGS',-519.0,'+12.1%'],['Gross Profit',323.6,'+17.8%'],['Operating Exp',-127.2,'+9.4%'],['EBITDA',196.4,'+19.0%'],['Dep & Amort',-31.5,'+6%'],['Interest',-12.4,'-3%'],['Tax',-34.3,'+16%'],['Net Profit',118.2,'+15.4%']],
+  cashTrend:[112,108,121,134,128,140,151,148,156,159,161,164.8],
+  expense:{lab:['Salaries','Cloud & Infra','Marketing','R&D','Admin','Travel'],v:[214,98,72,86,41,19]},
+  ratios:[{l:'Current Ratio',v:2.4,t:2.0},{l:'Quick Ratio',v:1.8,t:1.5},{l:'Debt/Equity',v:0.32,t:0.5,inv:1},{l:'ROCE',v:24.6,t:20,pct:1}],
+  budget:[['Technology',180,168,'93%','ok'],['Sales & Mktg',150,158,'105%','warn'],['Operations',120,112,'93%','ok'],['People',240,231,'96%','ok'],['Capex',90,71,'79%','ok']]},
+ hr:{kpi:[
+   {l:'Total Headcount',v:'2,847',c:'+212 net',up:1,s:'18 locations',cls:''},
+   {l:'Attrition TTM',v:'13.8%',c:'-2.4 pts',up:1,s:'Industry 17%',cls:'gr'},
+   {l:'Avg Tenure',v:'3.4 yrs',c:'+0.3',up:1,s:'Median 2.8',cls:''},
+   {l:'Offer Acceptance',v:'81%',c:'+4 pts',up:1,s:'342 hires',cls:'g'},
+   {l:'eNPS',v:'+42',c:'+8',up:1,s:'n=2,410',cls:'gr'}],
+  headTrend:[2635,2668,2690,2712,2741,2760,2779,2798,2810,2825,2838,2847],
+  dept:{lab:['Engineering','Sales','Delivery','Support','G&A','Marketing'],v:[1024,486,612,341,224,160]},
+  diversity:{lab:['Male','Female','Other'],v:[61,38,1]},
+  attrByDept:[['Engineering',1024,'11.2%','ok'],['Sales',486,'19.8%','bad'],['Delivery',612,'14.1%','warn'],['Support',341,'16.3%','warn'],['Marketing',160,'9.4%','ok'],['G&A',224,'7.1%','ok']],
+  ageBands:{lab:['<25','25-30','31-35','36-40','41-45','45+'],v:[318,892,764,486,241,146]},
+  engagement:[{l:'Manager Effectiveness',v:78},{l:'Career Growth',v:64},{l:'Work-Life Balance',v:71},{l:'Recognition',v:69},{l:'Compensation',v:58}]},
+ supply:{kpi:[
+   {l:'On-Time-In-Full',v:'94.2%',c:'+2.1 pts',up:1,s:'Target 95%',cls:'gr'},
+   {l:'Order Cycle Time',v:'4.8 days',c:'-0.6 d',up:1,s:'Lead-to-deliver',cls:''},
+   {l:'Perfect Order',v:'88.6%',c:'+3.4 pts',up:1,s:'Qual+time+docs',cls:'g'},
+   {l:'Freight / Order',v:'₹1,240',c:'+8%',up:0,s:'Fuel surcharge',cls:'am'},
+   {l:'Defect PPM',v:'310',c:'-90',up:1,s:'Target <400',cls:'gr'}],
+  otifTrend:[90.1,91.2,90.8,92.4,93.1,92.7,93.6,94.0,93.8,94.5,94.1,94.2],
+  modeSplit:{lab:['Road','Rail','Air','Sea'],v:[58,21,9,12]},
+  suppliers:[['Bharat Components','Pune',96.4,'A','ok'],['Chennai Logistics','Chennai',91.2,'B','warn'],['Vega Materials','Surat',98.1,'A','ok'],['Eastern Freight','Kolkata',84.7,'C','bad'],['Deccan Supply Co','Hyderabad',93.8,'B','ok']],
+  laneCost:{lab:['Mum→Del','Chn→Blr','Pun→Ahd','Kol→Gau','Hyd→Chn'],v:[1480,640,720,1120,580]},
+  fillRate:[{l:'North Hub',v:92},{l:'South Hub',v:96},{l:'West Hub',v:94},{l:'East Hub',v:87}]},
+ inventory:{kpi:[
+   {l:'Inventory Value',v:'₹148.6 Cr',c:'-4.2%',up:1,s:'Optimised',cls:'gr'},
+   {l:'Inventory Turns',v:'7.2x',c:'+0.8x',up:1,s:'Target 7x',cls:'g'},
+   {l:'Days of Supply',v:'50.7',c:'-6 d',up:1,s:'Was 56.6',cls:''},
+   {l:'Stockout Rate',v:'2.4%',c:'-0.9 pts',up:1,s:'A-items 0.8%',cls:'gr'},
+   {l:'Carrying Cost',v:'₹26.7 Cr',c:'+3%',up:0,s:'18% of value',cls:'am'}],
+  stockTrend:[162,158,160,155,153,151,149,150,148,149,147,148.6],
+  abc:{lab:['A (high value)','B (medium)','C (low)'],v:[72,21,7]},
+  warehouses:[['Bhiwandi DC','Mumbai',42.6,96,'ok'],['Sriperumbudur','Chennai',31.8,94,'ok'],['Bhiwadi','Delhi NCR',28.4,89,'warn'],['Hosur','Bengaluru',24.1,92,'ok'],['Howrah','Kolkata',21.7,83,'bad']],
+  aging:{lab:['0-30 d','31-60 d','61-90 d','91-180 d','>180 d'],v:[58,42,28,14,6.6]},
+  category:{lab:['Hardware','Licenses','Accessories','Spares','Consumables'],v:[64,38,21,16,9.6]},
+  deadstock:[{l:'Hardware',v:3.2},{l:'Accessories',v:1.8},{l:'Spares',v:2.4},{l:'Consumables',v:0.9}]}
+};
+
+const ICONS={
+ sales:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>',
+ finance:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h3.5a1.5 1.5 0 0 1 0 3h-2a1.5 1.5 0 0 0 0 3h3"/></svg>',
+ hr:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5.6"/></svg>',
+ supply:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3h13v13H1z"/><path d="M14 8h5l3 3v5h-8z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="17.5" cy="18.5" r="2"/></svg>',
+ inventory:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9 12 4l9 5v8l-9 5-9-5z"/><path d="M3 9l9 5 9-5M12 14v8"/></svg>'};
+const DOMAINS=[
+ {id:'sales',name:'Sales & Revenue',pages:['Executive Summary','Pipeline & Funnel','Product & Region']},
+ {id:'finance',name:'Finance',pages:['P&L Overview','Cash & Liquidity','Budget vs Actual']},
+ {id:'hr',name:'Human Resources',pages:['Workforce Overview','Attrition & Risk','Engagement']},
+ {id:'supply',name:'Supply Chain',pages:['Logistics KPIs','Supplier Scorecard','Network & Cost']},
+ {id:'inventory',name:'Inventory',pages:['Stock Health','ABC & Aging','Warehouse View']}];
+
+const C={cyan:'#00B4D8',teal:'#0093B2',gold:'#F2C811',green:'#2ec27e',red:'#ef5d5d',amber:'#f6a609'};
+const PAL=[C.cyan,C.gold,C.teal,C.green,C.amber,C.red,'#7c6cf2','#e87dd6'];
+Chart.defaults.color='#8aa2c0';Chart.defaults.font.family="'Inter Tight',sans-serif";Chart.defaults.font.size=10.5;
+const GRID={color:'rgba(255,255,255,.06)'};
+let charts=[];const clearCharts=()=>{charts.forEach(c=>c.destroy());charts=[]};
+const mk=(id,cfg)=>{const c=new Chart(document.getElementById(id),cfg);charts.push(c);return c;};
+
+/* ===== option factories ===== */
+const baseOpt=()=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:9,padding:9,font:{size:10}},position:'bottom'}}});
+const lineOpt=(min,max)=>{const o=baseOpt();o.scales={x:{grid:GRID},y:{grid:GRID,...(min!=null?{min,max}:{})}};o.interaction={mode:'index',intersect:false};return o;};
+const barOpt=()=>{const o=baseOpt();o.scales={x:{grid:GRID},y:{grid:GRID,beginAtZero:true}};return o;};
+const stackOpt=()=>{const o=barOpt();o.scales={x:{stacked:true,grid:GRID},y:{stacked:true,grid:GRID}};return o;};
+const doughOpt=()=>{const o=baseOpt();o.cutout='60%';return o;};
+
+/* ===== UI builders ===== */
+const kpiHTML=arr=>'<div class="kpis">'+arr.map(k=>`<div class="kpi ${k.cls}"><div class="lab">${k.l}</div><div class="val">${k.v}</div><div class="sub"><span class="chg ${k.up?'up':'down'}">${k.up?'▲':'▼'} ${k.c}</span> · ${k.s}</div></div>`).join('')+'</div>';
+const panel=(t,sub,body,tag)=>`<div class="panel"><div class="ph"><div><h3>${t}</h3>${sub?`<small>${sub}</small>`:''}</div>${tag?`<span class="tag">${tag}</span>`:''}</div>${body}</div>`;
+const cv=id=>`<div class="cwrap"><canvas id="${id}"></canvas></div>`;
+const barlist=rows=>`<div class="bars-pad">`+rows.map(r=>`<div><div class="barrow"><span>${r.l}</span><span class="gauge-num" ${r.col?`style="color:${r.col}"`:''}>${r.disp}</span></div><div class="bar"><i style="width:${r.pct}%;background:${r.fill}"></i></div></div>`).join('')+`</div>`;
+
+/* ================= PAGES ================= */
+const PAGES={
+ 'sales-0':()=>{const d=DATA.sales;return kpiHTML(d.kpi)+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('Revenue Trend vs Target','Monthly net revenue ₹ Cr',cv('s_rev'),'Tracking +14%')}
+    ${panel('Revenue by Region','YTD share',cv('s_reg'))}
+    ${panel('Channel Mix','% by GTM channel',cv('s_chan'))}
+    ${panel('Top Products / Lines','Revenue & margin leaders',`<div class="scrollt"><table><thead><tr><th>Product</th><th>Region</th><th class="num">Rev</th><th class="num">Mgn</th><th>YoY</th></tr></thead><tbody>${d.products.map(p=>`<tr><td>${p[0]}</td><td>${p[1]}</td><td class="num">${p[2]}</td><td class="num">${p[3]}%</td><td><span class="pill ${p[5]}">${p[4]}</span></td></tr>`).join('')}</tbody></table></div>`)}
+  </div>`;},
+ 'sales-1':()=>{const d=DATA.sales;return kpiHTML(d.kpi.slice(0,5))+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('Sales Funnel','Lead → Won (count)',cv('s_fun'),'27.6% win')}
+    ${panel('Stage Conversion','Drop-off',`<div class="scrollt"><table><thead><tr><th>Stage</th><th class="num">Count</th><th class="num">Conv</th></tr></thead><tbody>${d.funnel.map((f,i)=>{const prev=i?d.funnel[i-1].v:f.v;return `<tr><td>${f.s}</td><td class="num">${fmtN(f.v)}</td><td class="num">${i?(f.v/prev*100).toFixed(0)+'%':'—'}</td></tr>`}).join('')}</tbody></table></div>`)}
+    ${panel('Open Pipeline by Stage','₹ Cr',cv('s_pipe'))}
+    ${panel('Quarterly Bookings','New + renewal ₹ Cr',cv('s_book'))}
+  </div>`;},
+ 'sales-2':()=>{const d=DATA.sales;return kpiHTML(d.kpi)+
+  `<div class="grid g2" style="grid-template-rows:1fr 1fr">
+    ${panel('Region Performance','YTD ₹ Cr',cv('s_reg2'))}
+    ${panel('Product Margin Map','Revenue vs margin %',cv('s_scatter'))}
+    ${panel('Region × Quarter','Revenue momentum ₹ Cr',cv('s_rq'))}
+    ${panel('Margin by Product','Gross margin %',cv('s_pmargin'))}
+  </div>`;},
+
+ 'finance-0':()=>{const d=DATA.finance;return kpiHTML(d.kpi)+
+  `<div class="grid g32" style="grid-template-rows:1fr 1fr">
+    ${panel('Profit & Loss','FY YTD ₹ Cr',`<div class="scrollt"><table><thead><tr><th>Line Item</th><th class="num">Amt</th><th class="num">YoY</th></tr></thead><tbody>${d.pl.map(r=>`<tr><td style="${/Profit|EBITDA/.test(r[0])?'font-weight:700;color:var(--cyan)':''}">${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td></tr>`).join('')}</tbody></table></div>`)}
+    ${panel('P&L Waterfall','Revenue → Net Profit ₹ Cr',cv('f_water'),'PAT ₹118.2 Cr')}
+    ${panel('Operating Expense Mix','OpEx ₹ Cr',cv('f_exp'))}
+    ${panel('Key Financial Ratios','Actual vs target',ratioBars(d.ratios))}
+  </div>`;},
+ 'finance-1':()=>{const d=DATA.finance;return kpiHTML([d.kpi[2],d.kpi[0],d.kpi[4],{l:'Free Cash Flow',v:'₹133.3 Cr',c:'+14%',up:1,s:'After capex',cls:'g'},{l:'Net Debt',v:'₹64 Cr',c:'-18%',up:1,s:'Deleveraging',cls:'gr'}])+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('Operating Cash Flow','Cumulative ₹ Cr',cv('f_cash'),'+12% YoY')}
+    ${panel('Working Capital Cycle','Days',cv('f_wc'))}
+    ${panel('Receivables Aging','₹ Cr by bucket',cv('f_ar'))}
+    ${panel('Liquidity Position','₹ Cr',cv('f_liq'))}
+  </div>`;},
+ 'finance-2':()=>{const d=DATA.finance;return kpiHTML(d.kpi)+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('Budget vs Actual','Spend by function ₹ Cr',cv('f_bva'),'Overall 95%')}
+    ${panel('Budget Utilisation','',`<div class="scrollt"><table><thead><tr><th>Function</th><th class="num">Bud</th><th class="num">Act</th><th>Util</th></tr></thead><tbody>${d.budget.map(b=>`<tr><td>${b[0]}</td><td class="num">${b[1]}</td><td class="num">${b[2]}</td><td><span class="pill ${b[4]}">${b[3]}</span></td></tr>`).join('')}</tbody></table></div>`)}
+    ${panel('Variance Analysis','Actual − Budget ₹ Cr',cv('f_var'))}
+    ${panel('GST & Tax','Quarterly ₹ Cr',cv('f_gst'),'On-time filing')}
+  </div>`;},
+
+ 'hr-0':()=>{const d=DATA.hr;return kpiHTML(d.kpi)+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('Headcount Growth','Net FTE trend',cv('h_head'),'+212 net')}
+    ${panel('Gender Diversity','Composition %',cv('h_div'))}
+    ${panel('Headcount by Department','Current FTEs',cv('h_dept'))}
+    ${panel('Age Distribution','Employees by band',cv('h_age'))}
+  </div>`;},
+ 'hr-1':()=>{const d=DATA.hr;return kpiHTML([d.kpi[1],{l:'Voluntary Attrition',v:'9.6%',c:'-1.8 pts',up:1,s:'of 13.8%',cls:'gr'},{l:'Regretted Loss',v:'4.1%',c:'-0.6',up:1,s:'High performers',cls:''},{l:'Time to Backfill',v:'38 days',c:'-5 d',up:1,s:'Critical roles',cls:'g'},{l:'Internal Mobility',v:'18%',c:'+3 pts',up:1,s:'Of openings',cls:''}])+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('Attrition by Department','TTM % — hotspots',cv('h_attr'),'Sales at risk')}
+    ${panel('Department Risk','HC & attrition',`<div class="scrollt"><table><thead><tr><th>Dept</th><th class="num">FTE</th><th class="num">Attr</th><th>Status</th></tr></thead><tbody>${d.attrByDept.map(r=>`<tr><td>${r[0]}</td><td class="num">${fmtN(r[1])}</td><td class="num">${r[2]}</td><td><span class="pill ${r[3]}">${r[3]==='ok'?'OK':r[3]==='warn'?'Watch':'Risk'}</span></td></tr>`).join('')}</tbody></table></div>`)}
+    ${panel('Attrition Trend','Rolling 12-mo %',cv('h_attrend'))}
+    ${panel('Tenure of Leavers','When people leave (mo)',cv('h_tenure'))}
+  </div>`;},
+ 'hr-2':()=>{const d=DATA.hr;return kpiHTML(d.kpi)+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('Engagement Drivers','Favourable % by dimension',cv('h_eng'),'eNPS +42')}
+    ${panel('vs Benchmark','Radar',cv('h_radar'))}
+    ${panel('Learning & Development','Avg training hrs/emp',cv('h_ld'))}
+    ${panel('Performance Distribution','Rating spread %',cv('h_perf'))}
+  </div>`;},
+
+ 'supply-0':()=>{const d=DATA.supply;return kpiHTML(d.kpi)+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('OTIF Trend','% vs 95% target',cv('sc_otif'),'94.2%')}
+    ${panel('Transport Mode','% of shipments',cv('sc_mode'))}
+    ${panel('Fill Rate by Hub','Order fill %',fillBars(d.fillRate))}
+    ${panel('Order Cycle','Avg days per phase',cv('sc_cycle'))}
+  </div>`;},
+ 'supply-1':()=>{const d=DATA.supply;return kpiHTML(d.kpi)+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('Supplier OTIF','Score by supplier',cv('sc_sup'))}
+    ${panel('Supplier Scorecard','Rating & reliability',`<div class="scrollt"><table><thead><tr><th>Supplier</th><th>Loc</th><th class="num">OTIF</th><th>Gr</th></tr></thead><tbody>${d.suppliers.map(s=>`<tr><td>${s[0]}</td><td>${s[1]}</td><td class="num">${s[2]}%</td><td><span class="pill ${s[4]}">${s[3]}</span></td></tr>`).join('')}</tbody></table></div>`)}
+    ${panel('Defect Rate','PPM by supplier',cv('sc_def'))}
+    ${panel('Spend Concentration','% by tier',cv('sc_spend'))}
+  </div>`;},
+ 'supply-2':()=>{const d=DATA.supply;return kpiHTML(d.kpi)+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('Lane Freight Cost','₹ per shipment',cv('sc_lane'),'+8% fuel')}
+    ${panel('Cost per Order','₹/order trend',cv('sc_cpo'))}
+    ${panel('Network Flow','Volume by corridor',cv('sc_flow'))}
+    ${panel('Carbon per Mode','CO₂ kg / tonne-km',cv('sc_carbon'),'ESG')}
+  </div>`;},
+
+ 'inventory-0':()=>{const d=DATA.inventory;return kpiHTML(d.kpi)+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('Inventory Value Trend','Closing stock ₹ Cr',cv('i_val'),'−4%')}
+    ${panel('ABC Classification','% of value',cv('i_abc'))}
+    ${panel('Stock by Category','₹ Cr',cv('i_cat'))}
+    ${panel('Turns vs Days Supply','By category',cv('i_turns'))}
+  </div>`;},
+ 'inventory-1':()=>{const d=DATA.inventory;return kpiHTML(d.kpi)+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('Inventory Aging','₹ Cr by bucket',cv('i_age'),'>180d ₹6.6 Cr')}
+    ${panel('Dead Stock Risk','Slow-moving ₹ Cr',cv('i_dead'))}
+    ${panel('ABC × Movement','% items by velocity',cv('i_abcmove'))}
+    ${panel('Stockout vs Excess','% by category',cv('i_balance'))}
+  </div>`;},
+ 'inventory-2':()=>{const d=DATA.inventory;return kpiHTML(d.kpi)+
+  `<div class="grid g23" style="grid-template-rows:1fr 1fr">
+    ${panel('Warehouse Stock','Value ₹ Cr by DC',cv('i_wh'))}
+    ${panel('Warehouse Scorecard','Value & accuracy',`<div class="scrollt"><table><thead><tr><th>DC</th><th>Region</th><th class="num">Val</th><th class="num">Acc</th></tr></thead><tbody>${d.warehouses.map(w=>`<tr><td>${w[0]}</td><td>${w[1]}</td><td class="num">₹${w[2]}</td><td><span class="pill ${w[4]}">${w[3]}%</span></td></tr>`).join('')}</tbody></table></div>`)}
+    ${panel('Space Utilisation','% capacity by DC',cv('i_space'))}
+    ${panel('Replenishment','Reorder triggers',cv('i_replen'))}
+  </div>`;}
+};
+function ratioBars(rs){return `<div class="ratiowrap">`+rs.map(r=>{const good=r.inv?r.v<=r.t:r.v>=r.t;const pct=r.pct?Math.min(r.v/(r.t*1.5)*100,100):Math.min(r.v/(r.t*1.5)*100,100);return `<div><div class="barrow"><span>${r.l}</span><span class="gauge-num" style="color:${good?'var(--green)':'var(--amber)'}">${r.v}${r.pct?'%':''} <small style="color:var(--mut2)">/ ${r.t}${r.pct?'%':''}</small></span></div><div class="bar"><i style="width:${pct}%;background:${good?'linear-gradient(90deg,var(--green),var(--teal))':'linear-gradient(90deg,var(--amber),var(--gold))'}"></i></div></div>`}).join('')+`</div>`;}
+function fillBars(fr){return `<div class="bars-pad">`+fr.map(f=>`<div><div class="barrow"><span>${f.l}</span><span class="gauge-num">${f.v}%</span></div><div class="bar"><i style="width:${f.v}%;background:${f.v>=92?'linear-gradient(90deg,var(--green),var(--teal))':f.v>=88?'linear-gradient(90deg,var(--amber),var(--gold))':'linear-gradient(90deg,var(--red),var(--amber))'}"></i></div></div>`).join('')+`</div>`;}
+
+/* ================= CHART RENDER ================= */
+const RENDER={
+ 'sales-0':()=>{const d=DATA.sales;
+  mk('s_rev',{type:'line',data:{labels:months,datasets:[{label:'Actual',data:d.revTrend,borderColor:C.cyan,backgroundColor:'rgba(0,180,216,.12)',fill:true,tension:.4,borderWidth:2.5,pointRadius:0},{label:'Target',data:d.revTarget,borderColor:C.gold,borderDash:[6,4],fill:false,tension:.3,borderWidth:1.8,pointRadius:0}]},options:lineOpt()});
+  mk('s_reg',{type:'doughnut',data:{labels:d.region.lab,datasets:[{data:d.region.v,backgroundColor:PAL,borderWidth:0}]},options:doughOpt()});
+  mk('s_chan',{type:'bar',data:{labels:d.channel.lab,datasets:[{data:d.channel.v,backgroundColor:PAL,borderRadius:6}]},options:barOpt()});},
+ 'sales-1':()=>{const d=DATA.sales;
+  mk('s_fun',{type:'bar',data:{labels:d.funnel.map(f=>f.s),datasets:[{data:d.funnel.map(f=>f.v),backgroundColor:[C.cyan,C.teal,C.gold,C.amber,C.green],borderRadius:6}]},options:{...barOpt(),indexAxis:'y'}});
+  mk('s_pipe',{type:'bar',data:{labels:['Qualified','Proposal','Negotiation','Verbal'],datasets:[{data:[124,98,62,28],backgroundColor:C.teal,borderRadius:6}]},options:barOpt()});
+  mk('s_book',{type:'bar',data:{labels:['Q1','Q2','Q3','Q4'],datasets:[{label:'New',data:[112,128,141,134],backgroundColor:C.cyan,borderRadius:5},{label:'Renewal',data:[68,74,79,86],backgroundColor:C.gold,borderRadius:5}]},options:stackOpt()});},
+ 'sales-2':()=>{const d=DATA.sales;
+  mk('s_reg2',{type:'bar',data:{labels:d.region.lab,datasets:[{data:d.region.v,backgroundColor:PAL,borderRadius:6}]},options:barOpt()});
+  mk('s_scatter',{type:'scatter',data:{datasets:[{label:'Products',data:d.products.map(p=>({x:p[2],y:p[3]})),backgroundColor:C.cyan,pointRadius:8,pointHoverRadius:11}]},options:{...baseOpt(),scales:{x:{title:{display:true,text:'Revenue ₹ Cr'},grid:GRID},y:{title:{display:true,text:'Margin %'},grid:GRID}}}});
+  mk('s_rq',{type:'bar',data:{labels:['Q1','Q2','Q3','Q4'],datasets:d.region.lab.map((r,i)=>({label:r,data:[72+i*4,78+i*3,84+i*2,88+i*5].map(x=>Math.round(x*(d.region.v[i]/300))),backgroundColor:PAL[i],borderRadius:4}))},options:barOpt()});
+  mk('s_pmargin',{type:'bar',data:{labels:d.products.map(p=>p[0]),datasets:[{data:d.products.map(p=>p[3]),backgroundColor:d.products.map(p=>p[3]>40?C.green:p[3]>30?C.gold:C.red),borderRadius:6}]},options:{...barOpt(),indexAxis:'y'}});},
+ 'finance-0':()=>{const d=DATA.finance;const wf=[842.6,-519,-127.2,-31.5,-12.4,-34.3];const labels=['Revenue','COGS','OpEx','D&A','Interest','Tax','Net Profit'];let run=0;const base=[],show=[];wf.forEach(v=>{if(v>=0){base.push(0);show.push(v);run=v}else{run+=v;base.push(run);show.push(-v)}});base.push(0);show.push(118.2);
+  mk('f_water',{type:'bar',data:{labels,datasets:[{data:base,backgroundColor:'transparent'},{data:show,backgroundColor:labels.map((l,i)=>i===0||i===6?C.cyan:C.red),borderRadius:4}]},options:{...barOpt(),plugins:{legend:{display:false}}}});
+  mk('f_exp',{type:'doughnut',data:{labels:d.expense.lab,datasets:[{data:d.expense.v,backgroundColor:PAL,borderWidth:0}]},options:doughOpt()});},
+ 'finance-1':()=>{const d=DATA.finance;
+  mk('f_cash',{type:'line',data:{labels:months,datasets:[{data:d.cashTrend,borderColor:C.green,backgroundColor:'rgba(46,194,126,.12)',fill:true,tension:.4,borderWidth:2.5,pointRadius:0}]},options:lineOpt()});
+  mk('f_wc',{type:'bar',data:{labels:['DSO','DIO','DPO','CCC'],datasets:[{data:[52,38,44,46],backgroundColor:[C.amber,C.cyan,C.teal,C.gold],borderRadius:6}]},options:barOpt()});
+  mk('f_ar',{type:'bar',data:{labels:['0-30','31-60','61-90','>90'],datasets:[{data:[84,42,21,11],backgroundColor:[C.green,C.gold,C.amber,C.red],borderRadius:6}]},options:barOpt()});
+  mk('f_liq',{type:'bar',data:{labels:['Cash','Receivables','Payables','Net'],datasets:[{data:[96,158,-112,142],backgroundColor:[C.cyan,C.teal,C.red,C.green],borderRadius:6}]},options:barOpt()});},
+ 'finance-2':()=>{const d=DATA.finance;
+  mk('f_bva',{type:'bar',data:{labels:d.budget.map(b=>b[0]),datasets:[{label:'Budget',data:d.budget.map(b=>b[1]),backgroundColor:'rgba(0,180,216,.35)',borderRadius:5},{label:'Actual',data:d.budget.map(b=>b[2]),backgroundColor:C.gold,borderRadius:5}]},options:barOpt()});
+  mk('f_var',{type:'bar',data:{labels:d.budget.map(b=>b[0]),datasets:[{data:d.budget.map(b=>b[2]-b[1]),backgroundColor:d.budget.map(b=>b[2]-b[1]<=0?C.green:C.red),borderRadius:6}]},options:barOpt()});
+  mk('f_gst',{type:'bar',data:{labels:['Q1','Q2','Q3','Q4'],datasets:[{label:'Output GST',data:[32,35,37,38.9],backgroundColor:C.cyan,borderRadius:5},{label:'Input Credit',data:[11,12.6,13.4,14.2],backgroundColor:C.gold,borderRadius:5}]},options:barOpt()});},
+ 'hr-0':()=>{const d=DATA.hr;
+  mk('h_head',{type:'line',data:{labels:months,datasets:[{data:d.headTrend,borderColor:C.cyan,backgroundColor:'rgba(0,180,216,.12)',fill:true,tension:.4,borderWidth:2.5,pointRadius:0}]},options:lineOpt()});
+  mk('h_div',{type:'doughnut',data:{labels:d.diversity.lab,datasets:[{data:d.diversity.v,backgroundColor:[C.cyan,C.gold,C.teal],borderWidth:0}]},options:doughOpt()});
+  mk('h_dept',{type:'bar',data:{labels:d.dept.lab,datasets:[{data:d.dept.v,backgroundColor:PAL,borderRadius:6}]},options:{...barOpt(),indexAxis:'y'}});
+  mk('h_age',{type:'bar',data:{labels:d.ageBands.lab,datasets:[{data:d.ageBands.v,backgroundColor:C.teal,borderRadius:6}]},options:barOpt()});},
+ 'hr-1':()=>{const d=DATA.hr;
+  mk('h_attr',{type:'bar',data:{labels:d.attrByDept.map(r=>r[0]),datasets:[{data:d.attrByDept.map(r=>parseFloat(r[2])),backgroundColor:d.attrByDept.map(r=>r[3]==='ok'?C.green:r[3]==='warn'?C.amber:C.red),borderRadius:6}]},options:barOpt()});
+  mk('h_attrend',{type:'line',data:{labels:months,datasets:[{data:[16.2,15.8,15.4,15.1,14.8,14.6,14.4,14.2,14.1,13.9,13.8,13.8],borderColor:C.green,backgroundColor:'rgba(46,194,126,.1)',fill:true,tension:.4,borderWidth:2.5,pointRadius:0}]},options:lineOpt()});
+  mk('h_tenure',{type:'bar',data:{labels:['0-6','7-12','13-24','25-36','>36'],datasets:[{data:[28,34,22,11,5],backgroundColor:C.amber,borderRadius:6}]},options:barOpt()});},
+ 'hr-2':()=>{const d=DATA.hr;
+  mk('h_eng',{type:'bar',data:{labels:d.engagement.map(e=>e.l),datasets:[{data:d.engagement.map(e=>e.v),backgroundColor:d.engagement.map(e=>e.v>=70?C.green:e.v>=60?C.gold:C.amber),borderRadius:6}]},options:{...barOpt(),indexAxis:'y'}});
+  mk('h_radar',{type:'radar',data:{labels:d.engagement.map(e=>e.l),datasets:[{label:'Datacense',data:d.engagement.map(e=>e.v),borderColor:C.cyan,backgroundColor:'rgba(0,180,216,.2)',borderWidth:2},{label:'Benchmark',data:[72,68,70,66,64],borderColor:C.gold,backgroundColor:'rgba(242,200,17,.12)',borderWidth:1.5}]},options:{...baseOpt(),scales:{r:{grid:GRID,angleLines:{color:'rgba(255,255,255,.08)'},pointLabels:{font:{size:9}},ticks:{display:false}}}}});
+  mk('h_ld',{type:'bar',data:{labels:d.dept.lab,datasets:[{data:[42,28,38,31,24,33],backgroundColor:C.teal,borderRadius:6}]},options:barOpt()});
+  mk('h_perf',{type:'bar',data:{labels:['Outstanding','Exceeds','Meets','Partial','Below'],datasets:[{data:[8,24,52,12,4],backgroundColor:[C.green,C.cyan,C.gold,C.amber,C.red],borderRadius:6}]},options:barOpt()});},
+ 'supply-0':()=>{const d=DATA.supply;
+  mk('sc_otif',{type:'line',data:{labels:months,datasets:[{label:'OTIF',data:d.otifTrend,borderColor:C.cyan,backgroundColor:'rgba(0,180,216,.12)',fill:true,tension:.4,borderWidth:2.5,pointRadius:0},{label:'Target',data:Array(12).fill(95),borderColor:C.gold,borderDash:[6,4],pointRadius:0,borderWidth:1.6}]},options:lineOpt(88,98)});
+  mk('sc_mode',{type:'doughnut',data:{labels:d.modeSplit.lab,datasets:[{data:d.modeSplit.v,backgroundColor:PAL,borderWidth:0}]},options:doughOpt()});
+  mk('sc_cycle',{type:'bar',data:{labels:['Order','Pick','Pack','Ship','Deliver'],datasets:[{data:[0.5,0.8,0.6,1.4,1.5],backgroundColor:C.teal,borderRadius:6}]},options:barOpt()});},
+ 'supply-1':()=>{const d=DATA.supply;
+  mk('sc_sup',{type:'bar',data:{labels:d.suppliers.map(s=>s[0]),datasets:[{data:d.suppliers.map(s=>s[2]),backgroundColor:d.suppliers.map(s=>s[4]==='ok'?C.green:s[4]==='warn'?C.amber:C.red),borderRadius:6}]},options:{...barOpt(),indexAxis:'y'}});
+  mk('sc_def',{type:'bar',data:{labels:d.suppliers.map(s=>s[0]),datasets:[{data:[180,420,90,680,310],backgroundColor:C.amber,borderRadius:6}]},options:barOpt()});
+  mk('sc_spend',{type:'doughnut',data:{labels:['Tier 1','Tier 2','Tier 3','Spot'],datasets:[{data:[52,28,14,6],backgroundColor:PAL,borderWidth:0}]},options:doughOpt()});},
+ 'supply-2':()=>{const d=DATA.supply;
+  mk('sc_lane',{type:'bar',data:{labels:d.laneCost.lab,datasets:[{data:d.laneCost.v,backgroundColor:C.cyan,borderRadius:6}]},options:barOpt()});
+  mk('sc_cpo',{type:'line',data:{labels:months,datasets:[{data:[1120,1140,1155,1180,1190,1205,1215,1228,1234,1238,1242,1240],borderColor:C.amber,backgroundColor:'rgba(246,166,9,.1)',fill:true,tension:.4,borderWidth:2.5,pointRadius:0}]},options:lineOpt()});
+  mk('sc_flow',{type:'bar',data:{labels:['N-S','E-W','Metro','Tier-2','Export'],datasets:[{data:[3200,2400,4100,1800,920],backgroundColor:C.teal,borderRadius:6}]},options:barOpt()});
+  mk('sc_carbon',{type:'bar',data:{labels:['Road','Rail','Air','Sea'],datasets:[{data:[62,18,602,8],backgroundColor:[C.amber,C.green,C.red,C.cyan],borderRadius:6}]},options:barOpt()});},
+ 'inventory-0':()=>{const d=DATA.inventory;
+  mk('i_val',{type:'line',data:{labels:months,datasets:[{data:d.stockTrend,borderColor:C.cyan,backgroundColor:'rgba(0,180,216,.12)',fill:true,tension:.4,borderWidth:2.5,pointRadius:0}]},options:lineOpt()});
+  mk('i_abc',{type:'doughnut',data:{labels:d.abc.lab,datasets:[{data:d.abc.v,backgroundColor:[C.cyan,C.gold,C.teal],borderWidth:0}]},options:doughOpt()});
+  mk('i_cat',{type:'bar',data:{labels:d.category.lab,datasets:[{data:d.category.v,backgroundColor:PAL,borderRadius:6}]},options:{...barOpt(),indexAxis:'y'}});
+  mk('i_turns',{type:'bar',data:{labels:d.category.lab,datasets:[{label:'Turns',data:[8.2,12.4,6.1,4.2,9.8],backgroundColor:C.cyan,borderRadius:5},{label:'Days Supply',data:[44,29,60,87,37],backgroundColor:C.gold,borderRadius:5}]},options:barOpt()});},
+ 'inventory-1':()=>{const d=DATA.inventory;
+  mk('i_age',{type:'bar',data:{labels:d.aging.lab,datasets:[{data:d.aging.v,backgroundColor:[C.green,C.cyan,C.gold,C.amber,C.red],borderRadius:6}]},options:barOpt()});
+  mk('i_dead',{type:'bar',data:{labels:d.deadstock.map(x=>x.l),datasets:[{data:d.deadstock.map(x=>x.v),backgroundColor:C.red,borderRadius:6}]},options:{...barOpt(),indexAxis:'y'}});
+  mk('i_abcmove',{type:'bar',data:{labels:['A','B','C'],datasets:[{label:'Fast',data:[58,32,18],backgroundColor:C.green,borderRadius:5},{label:'Slow',data:[14,28,42],backgroundColor:C.amber,borderRadius:5}]},options:stackOpt()});
+  mk('i_balance',{type:'bar',data:{labels:d.category.lab,datasets:[{label:'Stockout',data:[2.1,0.8,3.4,4.2,1.6],backgroundColor:C.red,borderRadius:5},{label:'Excess',data:[6,3,9,14,4],backgroundColor:C.amber,borderRadius:5}]},options:barOpt()});},
+ 'inventory-2':()=>{const d=DATA.inventory;
+  mk('i_wh',{type:'bar',data:{labels:d.warehouses.map(w=>w[0]),datasets:[{data:d.warehouses.map(w=>w[2]),backgroundColor:C.cyan,borderRadius:6}]},options:barOpt()});
+  mk('i_space',{type:'bar',data:{labels:d.warehouses.map(w=>w[0]),datasets:[{data:[88,76,94,71,82],backgroundColor:[88,76,94,71,82].map(v=>v>90?C.red:v>80?C.amber:C.green),borderRadius:6}]},options:barOpt()});
+  mk('i_replen',{type:'bar',data:{labels:d.warehouses.map(w=>w[0]),datasets:[{label:'Below ROP',data:[12,8,18,6,14],backgroundColor:C.red,borderRadius:5},{label:'Healthy',data:[140,98,121,76,84],backgroundColor:C.green,borderRadius:5}]},options:stackOpt()});}
+};
+
+/* ================= SLICERS & NAV ================= */
+const subMap={
+ 'sales-0':'Group revenue health, margin and pipeline coverage for the board.',
+ 'sales-1':'How opportunities move from lead to close — conversion and bookings.',
+ 'sales-2':'Where revenue and margin come from across products and regions.',
+ 'finance-0':'Profitability bridge, expense structure and core ratios at a glance.',
+ 'finance-1':'Cash generation, working capital and liquidity for treasury review.',
+ 'finance-2':'Spend discipline — budget adherence, variance and statutory GST.',
+ 'hr-0':'Workforce size, shape and diversity across the organisation.',
+ 'hr-1':'Attrition hotspots and retention risk needing leadership attention.',
+ 'hr-2':'Engagement drivers, learning investment and performance spread.',
+ 'supply-0':'Service-level reliability and delivery performance across hubs.',
+ 'supply-1':'Supplier reliability, quality and spend concentration.',
+ 'supply-2':'Freight economics, network flow and sustainability metrics.',
+ 'inventory-0':'Stock value, classification and turnover efficiency.',
+ 'inventory-1':'Aging, dead-stock exposure and stockout-vs-excess balance.',
+ 'inventory-2':'Distribution-centre level stock, accuracy and replenishment.'};
+
+let state={dom:'sales',page:0,fy:'FY 25–26',qtr:'YTD',region:'All'};
+const SLICERS=[
+ {key:'fy',lab:'Fiscal Year',opts:['FY 25–26','FY 24–25']},
+ {key:'qtr',lab:'Quarter',opts:['YTD','Q1','Q2','Q3','Q4']},
+ {key:'region',lab:'Region',opts:['All','West','South','North','East']}];
+
+function buildRail(){
+ document.getElementById('rail').innerHTML='<div class="railhdr">Domains</div>'+DOMAINS.map(d=>
+  `<div class="dtab ${d.id===state.dom?'active':''}" data-dom="${d.id}">${ICONS[d.id]}${d.name}</div>`).join('');
+}
+function buildSlicer(){
+ const dom=DOMAINS.find(d=>d.id===state.dom);
+ let html=SLICERS.map(s=>`<span class="sl-lab">${s.lab}</span><div class="chipset" data-key="${s.key}">${s.opts.map(o=>`<span class="chip ${state[s.key]===o?'on':''}" data-val="${o}">${o}</span>`).join('')}</div><span class="sl-div"></span>`).join('');
+ html+=`<span class="reset" id="resetBtn">↺ Reset</span>`;
+ html+=`<div class="pagepills">${dom.pages.map((p,i)=>`<span class="ppill ${i===state.page?'active':''}" data-page="${i}">${p}</span>`).join('')}</div>`;
+ document.getElementById('slicer').innerHTML=html;
+}
+function render(){
+ clearCharts();
+ const dom=DOMAINS.find(d=>d.id===state.dom);const key=state.dom+'-'+state.page;
+ document.getElementById('ptitle').textContent=dom.name+' · '+dom.pages[state.page];
+ const flt=(state.qtr!=='YTD'||state.region!=='All')?`  ·  Filtered: ${state.qtr}${state.region!=='All'?' / '+state.region:''}`:'';
+ document.getElementById('psub').textContent=subMap[key]+flt;
+ document.getElementById('report').innerHTML=PAGES[key]();
+ requestAnimationFrame(()=>{if(RENDER[key])RENDER[key]();});
+}
+document.getElementById('rail').addEventListener('click',e=>{const t=e.target.closest('.dtab');if(!t)return;state.dom=t.dataset.dom;state.page=0;buildRail();buildSlicer();render();});
+document.getElementById('slicer').addEventListener('click',e=>{
+ const chip=e.target.closest('.chip');
+ if(chip){state[chip.closest('.chipset').dataset.key]=chip.dataset.val;buildSlicer();render();return;}
+ const pp=e.target.closest('.ppill');
+ if(pp){state.page=+pp.dataset.page;buildSlicer();render();return;}
+ if(e.target.id==='resetBtn'){state.qtr='YTD';state.region='All';state.fy='FY 25–26';buildSlicer();render();}
+});
+
+scaleStage();buildRail();buildSlicer();render();
+</script>
+</body>
+</html>

@@ -19,6 +19,7 @@ function numberValue(value: string | number | boolean | undefined, fallback: num
 export function Typography() {
   const formatProps = useThemeStore((s) => s.formatProps)
   const setProp = useThemeStore((s) => s.setProp)
+  const resetTypography = useThemeStore((s) => s.resetTypography)
   const fontFace = typeof formatProps['general.typography.fontFace'] === 'string'
     ? formatProps['general.typography.fontFace']
     : 'Segoe UI'
@@ -66,6 +67,25 @@ export function Typography() {
           </label>
         )
       })}
+
+      <button
+        type="button"
+        onClick={resetTypography}
+        style={{
+          marginTop: 4,
+          height: 32,
+          border: '1px solid var(--border-ui)',
+          borderRadius: 7,
+          background: 'var(--surface)',
+          color: 'var(--text)',
+          fontSize: 11,
+          fontWeight: 750,
+          fontFamily: 'inherit',
+          cursor: 'pointer',
+        }}
+      >
+        Reset to default
+      </button>
     </div>
   )
 }

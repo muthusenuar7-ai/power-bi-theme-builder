@@ -1,0 +1,14 @@
+# Files excluded from the Vercel deployment upload.
+# These are prompt-generated development documents and diagnostic outputs that
+# are never needed to build or run the app. Runtime assets (public/templates/**
+# PBIT base templates, docs/reference/**, application source, production JSON)
+# are intentionally NOT listed here.
+
+# Prompt-generated development documents & progress artifacts
+docs/qa/
+
+# Generated diagnostic outputs (PBIT test artifacts, OPC validation JSON, etc.)
+diagnostics/
+
+# Generated audit report output
+reports/icon-duplicate-audit.json

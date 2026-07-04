@@ -4,6 +4,7 @@ import { buildVisualStyles, normalizeHex } from '@/lib/powerBIVisualStylesMapper
 import { validatePowerBITheme } from '@/lib/validatePowerBITheme'
 import { resolveThemeSurfaces } from '@/lib/themeSurfaceResolver'
 import { resolveEffectiveFormat } from '@/lib/effectiveFormatResolver'
+import { typographyDefaultsFromTextClasses } from '@/lib/typographyDefaults'
 
 const FALLBACK_COLORS = [
   '#0D9488', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444',
@@ -201,6 +202,8 @@ export async function parseImportedThemeJSON(input: File | string | unknown): Pr
   const warnings: string[] = []
 
   if (typeof parsed.name === 'string' && parsed.name.trim()) patch.themeName = parsed.name.trim()
+  const importedTypography = typographyDefaultsFromTextClasses(parsed.textClasses)
+  if (importedTypography) patch.typographyDefaults = importedTypography
 
   if (Array.isArray(parsed.dataColors)) {
     const dataColors = parsed.dataColors.map(extractColor).filter((color): color is string => Boolean(color)).slice(0, 10)

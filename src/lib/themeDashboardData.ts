@@ -32,11 +32,11 @@ export interface DonutSlice {
   value: number
 }
 
-export interface InsightDatum {
+/** One treemap tile (theme-agnostic; colours come from the resolved
+ *  DashboardTheme dataColors at render time, one palette colour per tile). */
+export interface TreemapDatum {
   label: string
-  value: string
-  sub: string
-  tone: Tone
+  value: number
 }
 
 /** Horizontal stacked bar: one row per category, values aligned to `segments`. */
@@ -66,11 +66,11 @@ export interface ProductRow {
 // ─── Sales Performance Dashboard ────────────────────────────────────────────────
 
 export const SALES_KPIS: KpiDatum[] = [
-  { label: 'Total Revenue',      value: '₹842.6 Cr', delta: '+14.2%',  positive: true,  caption: 'vs ₹737.8 Cr LY' },
-  { label: 'Target Achievement', value: '103%',      delta: '+3 pts',  positive: true,  caption: 'Goal ₹820 Cr' },
-  { label: 'Gross Margin',       value: '38.4%',     delta: '+1.8 pts', positive: true,  caption: 'Target 37.0%' },
-  { label: 'Avg Order Value',    value: '₹18.4 L',   delta: '+6.9%',   positive: true,  caption: 'Up-market mix' },
-  { label: 'New Customers',      value: '1,284',     delta: '-4.1%',   positive: false, caption: 'vs 1,339 LY' },
+  { label: 'Revenue',             value: '$842.6M', delta: '+14.2%',  positive: true,  caption: 'vs $737.8M LY' },
+  { label: 'Target',              value: '103%',    delta: '+3 pts',  positive: true,  caption: 'of $820M goal' },
+  { label: 'Gross Margin',        value: '38.4%',   delta: '+1.8 pts', positive: true,  caption: 'Target 37.0%' },
+  { label: 'Average Order Value', value: '$18.4K',  delta: '+6.9%',   positive: true,  caption: 'Up-market mix' },
+  { label: 'New Customers',       value: '1,284',   delta: '-4.1%',   positive: false, caption: 'vs 1,339 LY' },
 ]
 
 /** 12 months, deliberate ups AND downs (not a smooth climb). */
@@ -98,16 +98,19 @@ export const SALES_CHANNELS: DonutSlice[] = [
   { label: 'Renewal',    value: 10 },
 ]
 
-export const SALES_INSIGHTS: InsightDatum[] = [
-  { label: 'Revenue above target',         value: '+2.8% vs plan',      sub: 'YTD performance', tone: 'ok' },
-  { label: 'South region needs attention', value: '-4.6% conversion',   sub: 'Pipeline quality', tone: 'warn' },
-  { label: 'Enterprise margin improving',  value: '+1.9 pts margin',    sub: 'Service mix shift', tone: 'ok' },
-  { label: 'Retention improved',           value: '91.4% renewal rate', sub: 'Top accounts',      tone: 'ok' },
+/** Customer segment revenue mix — one tile per segment. Values are $M and are
+ *  deliberately spread so every theme palette colour gets a visible tile. */
+export const SALES_SEGMENT_MIX: TreemapDatum[] = [
+  { label: 'Enterprise',     value: 312 },
+  { label: 'Mid-Market',     value: 218 },
+  { label: 'Small Business', value: 146 },
+  { label: 'Public Sector',  value: 98 },
+  { label: 'Partners',       value: 68 },
 ]
 
 /** 6 regions × 3 categories (TASK 7/10: 5–6 regions, 3–4 categories). */
 export const SALES_REGION_MIX: StackedBarData = {
-  unit: '₹ Cr',
+  unit: '$M',
   segments: ['Products', 'Services', 'Support'],
   categories: ['West', 'South', 'North', 'East', 'Central', 'GCC'],
   values: [
@@ -122,7 +125,7 @@ export const SALES_REGION_MIX: StackedBarData = {
 
 /** 7 product groups × 2 series (TASK 7/10: 6–8 groups, balanced columns). */
 export const SALES_PRODUCT_PERF: ClusteredColumnData = {
-  unit: '₹ Cr',
+  unit: '$M',
   series: ['Sales', 'Profit'],
   groups: ['BI Enterprise', 'Analytics', 'DataOps', 'Embedded', 'Mobile BI', 'Gateway', 'Legacy'],
   values: [
@@ -136,10 +139,11 @@ export const SALES_PRODUCT_PERF: ClusteredColumnData = {
   ],
 }
 
+/** Top 4 products by revenue. Tones span ok / neutral / bad so the table clearly
+ *  demonstrates the theme's good/neutral/bad semantic colours. */
 export const SALES_TOP_PRODUCTS: ProductRow[] = [
-  { product: 'Power BI Enterprise', revenue: '₹186.4 Cr', margin: '41.2%', yoy: '+18%', tone: 'ok' },
-  { product: 'Analytics Cloud',     revenue: '₹152.7 Cr', margin: '37.8%', yoy: '+11%', tone: 'ok' },
-  { product: 'DataOps Suite',       revenue: '₹98.3 Cr',  margin: '33.1%', yoy: '+4%',  tone: 'warn' },
-  { product: 'Embedded BI',         revenue: '₹76.2 Cr',  margin: '44.6%', yoy: '+22%', tone: 'ok' },
-  { product: 'Legacy Reporting',    revenue: '₹41.9 Cr',  margin: '21.4%', yoy: '-9%',  tone: 'bad' },
+  { product: 'Power BI Enterprise', revenue: '$186.4M', margin: '41.2%', yoy: '+18%', tone: 'ok' },
+  { product: 'Analytics Cloud',     revenue: '$152.7M', margin: '37.8%', yoy: '+11%', tone: 'ok' },
+  { product: 'DataOps Suite',       revenue: '$98.3M',  margin: '33.1%', yoy: '+4%',  tone: 'warn' },
+  { product: 'Embedded BI',         revenue: '$76.2M',  margin: '44.6%', yoy: '-3%',  tone: 'bad' },
 ]

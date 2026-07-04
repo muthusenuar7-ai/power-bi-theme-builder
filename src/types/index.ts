@@ -4,38 +4,42 @@ export type SlicerPosition = 'top' | 'left' | 'right'
 export type PaletteSize    = 3 | 5 | 7 | 10
 export type ThemeColorMode = 'theme' | 'custom'
 export type IconLibraryCategory =
-  | 'Power BI Visuals'
-  | 'Power BI Actions'
-  | 'Analytics'
-  | 'Metrics/KPI'
-  | 'Business'
-  | 'Finance'
-  | 'Currency Signs'
-  | 'HR'
-  | 'Sales'
-  | 'Marketing'
-  | 'Operations'
-  | 'Supply Chain'
-  | 'Application'
+  | '3D Analytics'
+  | 'Analytics & Reporting'
+  | 'KPIs & Performance'
+  | 'Growth & Variance'
+  | 'Finance & Accounting'
+  | 'Banking & Insurance'
+  | 'Currency'
+  | 'Sales & Marketing'
+  | 'Customer Experience'
+  | 'Human Resources'
+  | 'Retail & E-commerce'
+  | 'FMCG & Consumer Goods'
+  | 'Operations & Manufacturing'
+  | 'Procurement & Inventory'
+  | 'Supply Chain & Logistics'
+  | 'Transportation'
+  | 'Airline & Travel'
+  | 'Automobile & Manufacturing'
+  | 'IT & Software'
+  | 'Cloud & Data'
+  | 'Cybersecurity'
+  | 'AI & Automation'
+  | 'Telecom'
+  | 'Project Management'
+  | 'Strategy & Planning'
+  | 'Product Management'
+  | 'Navigation & Actions'
+  | 'Status & Alerts'
   | 'Healthcare'
   | 'Education'
-  | 'Technology'
-  | 'Cloud'
-  | 'Development'
-  | 'Communication'
-  | 'Navigation'
-  | 'Directions & Arrows'
-  | 'Toggle & Controls'
-  | 'Shapes'
-  | 'Buttons'
-  | 'Files'
-  | 'Security'
-  | 'Admin'
-  | 'Alerts'
-  | 'Maps'
-  | 'Flags'
+  | 'Energy & Utilities'
+  | 'Sustainability & ESG'
+  | 'Real Estate'
+  | 'Government'
+  | 'General Business'
   | 'Countries'
-  | 'Essentials'
 export type ThemeCategory =
   | 'Corporate'
   | 'Technology'
@@ -170,12 +174,15 @@ export interface IconLibraryItem {
   name:     string
   primaryCategory?: IconLibraryCategory
   category: IconLibraryCategory
-  source:   'tabler' | 'flag'
+  source:   'flag' | 'v2'
   url:      string
   tags:     readonly string[]
   keywords?: readonly string[]
   domain?: string
   countryName?: string
+  /** Fixed original colors (3D Analytics artwork) — never recolored; color
+   *  and weight controls do not apply (flags are flagged via source). */
+  fixedColors?: boolean
   isoCode?: string
   license:  string
 }
@@ -263,7 +270,24 @@ export interface ThemeImportPatch {
   neutral?:      string
   bad?:          string
   paletteSize?:  PaletteSize
+  typographyDefaults?: ThemeTypographyDefaults
   warnings?:     string[]
+}
+
+export interface ThemeTypographyDefaults {
+  fontFamily: string
+  titleFontSize: number
+  subtitleFontSize: number
+  headerFontSize: number
+  labelFontSize: number
+  dataLabelFontSize: number
+  calloutFontSize: number
+  titleFontBold: boolean
+  titleFontItalic: boolean
+  titleFontUnderline: boolean
+  subtitleFontBold: boolean
+  subtitleFontItalic: boolean
+  subtitleFontUnderline: boolean
 }
 
 export interface ValidationResult {
@@ -338,6 +362,7 @@ export interface ThemeState {
   skillLevel:      SkillLevel
   activeFormatTab: FormatTab
   formatProps:     Record<string, FormatValue>
+  typographyDefaults: ThemeTypographyDefaults
   selectedVisual:  string | null
   themeName:       string
   visualTitles:    Record<string, string>
@@ -375,6 +400,7 @@ export interface ThemeHistorySnapshot {
   tableAccent: string
   paletteSize: PaletteSize
   formatProps: Record<string, FormatValue>
+  typographyDefaults: ThemeTypographyDefaults
   visualTitles: Record<string, string>
 }
 
@@ -412,6 +438,7 @@ export interface ThemeActions {
   resetGeneralSection: (sectionId: string) => void
   resetVisualSection:  (visualId: string, sectionId: string) => void
   resetVisualFormat:   (visualId: string) => void
+  resetTypography: () => void
   setSelectedVisual: (vid: string | null) => void
   setThemeName:    (name: string) => void
   setVisualTitle:  (visualId: string, title: string) => void

@@ -1,11 +1,13 @@
 import type { FormatValue, PaletteSize, ThemeColorMode } from '@/types'
-import { darken, getReadableTextColor, getRelativeLuminance, hexToRgb, lighten, mixColor } from '@/lib/colorUtils'
+import { darken, isDarkColor, mixColor } from '@/lib/colorUtils'
 import { normalizeHexColor } from '@/lib/paletteUtils'
+import { resolveSurfaceSet, type SurfaceLocks } from '@/lib/themeSurfaceFormula'
 
 export interface ThemeSurfaceInput {
   dataColors?: string[]
   paletteSize?: PaletteSize
   primary?: string
+  accent?: string
   bg?: string
   customCanvasBackground?: string | null
   canvasBackgroundMode?: ThemeColorMode
@@ -13,6 +15,13 @@ export interface ThemeSurfaceInput {
   cardBackground?: string
   visualBackgroundMode?: ThemeColorMode
   borderColor?: string
+  gridlineColor?: string
+  tableHeaderBackground?: string
+  tableRowAlt?: string
+  tableAccent?: string
+  good?: string
+  neutral?: string
+  bad?: string
   fg?: string
   titleColor?: string
   labelColor?: string
@@ -26,9 +35,15 @@ export interface ThemeSurfaces {
   effectiveVisualBackground: string
   effectiveTitleBackground: string
   effectiveBorderColor: string
+  effectiveGridlineColor: string
+  effectiveTableHeaderBackground: string
+  effectiveTableRowAlt: string
   effectiveForeground: string
   effectiveTitleColor: string
   effectiveLabelColor: string
+  effectiveKpiGood: string
+  effectiveKpiBad: string
+  effectiveKpiNeutral: string
   primary: string
   source: {
     canvasBackground: 'theme' | 'custom'
@@ -53,40 +68,21 @@ function isDefaultWhite(value: string | undefined): boolean {
   return Boolean(value && resolveHex(value, '#FFFFFF') === '#FFFFFF')
 }
 
-function isTooNeutralVisualSurface(hex: string): boolean {
-  const [r, g, b] = hexToRgb(hex)
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  const saturationApprox = max === 0 ? 0 : (max - min) / max
-  return getRelativeLuminance(hex) > 0.82 && saturationApprox < 0.08
-}
-
-function deriveCanvasBackground(baseCanvas: string, primary: string, source: 'theme' | 'custom'): string {
-  // Custom backgrounds (and any dark canvas) are used verbatim.
-  if (source !== 'theme') return baseCanvas
-  const lum = getRelativeLuminance(baseCanvas)
-  // A theme with a real, distinct background keeps it EXACTLY — no darkening.
-  // Only a near-white canvas (flat-white corporate themes) gets a faint hue
-  // tint so it still reads as themed, and we tint toward a LIGHTENED primary so
-  // the page never darkens even when the brand colour is very dark.
-  if (lum < 0.92) return baseCanvas
-  return mixColor(baseCanvas, lighten(primary, 60), 0.06)
-}
-
 function deriveOutspaceBackground(canvasBackground: string): string {
-  const isDarkCanvas = getRelativeLuminance(canvasBackground) < 0.35
-  return isDarkCanvas
+  return isDarkColor(canvasBackground)
     ? darken(canvasBackground, 18)
     : mixColor(canvasBackground, '#CBD5E1', 0.22)
 }
 
-function deriveVisualBackground(rawVisualBackground: string, primary: string, source: 'theme' | 'custom'): string {
-  if (source === 'custom') return rawVisualBackground
-  return isTooNeutralVisualSurface(rawVisualBackground)
-    ? mixColor(rawVisualBackground, primary, 0.04)
-    : rawVisualBackground
-}
-
+/**
+ * Resolves the theme's effective surfaces through the ONE standard colour
+ * formula (themeSurfaceFormula): palette-aware canvas tint, guaranteed
+ * canvas↔visual separation, soft borders/gridlines, table surfaces, readable
+ * text and visible KPI colours. Explicit user picks ("custom" modes and
+ * format-pane colours) are locked and pass through verbatim. Every consumer —
+ * dashboard preview, visuals preview, general property defaults and the
+ * Power BI JSON export — reads these same resolved values.
+ */
 export function resolveThemeSurfaces(state: ThemeSurfaceInput): ThemeSurfaces {
   const props = state.formatProps
   const activePalette = state.dataColors ?? []
@@ -98,8 +94,6 @@ export function resolveThemeSurfaces(state: ThemeSurfaceInput): ThemeSurfaces {
   const baseCanvas = canvasBackgroundSource === 'custom'
     ? resolveHex(state.customCanvasBackground, '#FFFFFF')
     : resolveHex(state.bg, '#FFFFFF')
-  const effectiveCanvasBackground = deriveCanvasBackground(baseCanvas, primary, canvasBackgroundSource)
-  const effectiveOutspaceBackground = deriveOutspaceBackground(effectiveCanvasBackground)
 
   const explicitVisualBackground = formatString(props, 'general.background.color')
   const visualBackgroundSource = state.visualBackgroundMode === 'custom' && explicitVisualBackground
@@ -107,35 +101,63 @@ export function resolveThemeSurfaces(state: ThemeSurfaceInput): ThemeSurfaces {
     : 'theme'
   const rawVisualBackground = visualBackgroundSource === 'custom'
     ? resolveHex(explicitVisualBackground, '#FFFFFF')
-    : resolveHex(state.visualBackground, resolveHex(state.cardBackground, effectiveCanvasBackground))
-  const effectiveVisualBackground = deriveVisualBackground(rawVisualBackground, primary, visualBackgroundSource)
+    : resolveHex(state.visualBackground, resolveHex(state.cardBackground, baseCanvas))
 
   const explicitTitleBackground = formatString(props, 'general.title.background')
   const titleBackgroundSource = explicitTitleBackground && !isDefaultWhite(explicitTitleBackground)
     ? 'custom'
     : 'theme'
-  const effectiveTitleBackground = titleBackgroundSource === 'custom'
-    ? resolveHex(explicitTitleBackground, effectiveVisualBackground)
-    : effectiveVisualBackground
-
   const explicitBorder = formatString(props, 'general.border.color')
-  const effectiveBorderColor = resolveHex(explicitBorder ?? state.borderColor, mixColor(effectiveVisualBackground, '#000000', 0.12))
-  const effectiveForeground = resolveHex(state.fg, getReadableTextColor(effectiveVisualBackground))
   const explicitTitleColor = formatString(props, 'general.title.fontColor')
   const explicitLabelColor = formatString(props, 'general.label.fontColor')
-  const effectiveTitleColor = resolveHex(explicitTitleColor ?? state.titleColor, effectiveForeground)
-  const effectiveLabelColor = resolveHex(explicitLabelColor ?? state.labelColor, effectiveForeground)
+
+  const locks: SurfaceLocks = {
+    canvasBackground: canvasBackgroundSource === 'custom',
+    visualBackground: visualBackgroundSource === 'custom',
+    titleBackground: titleBackgroundSource === 'custom',
+    borderColor: Boolean(explicitBorder),
+    titleColor: Boolean(explicitTitleColor),
+    labelColor: Boolean(explicitLabelColor),
+  }
+
+  const set = resolveSurfaceSet(
+    {
+      canvasBackground: baseCanvas,
+      visualBackground: rawVisualBackground,
+      titleBackground: titleBackgroundSource === 'custom' ? resolveHex(explicitTitleBackground, rawVisualBackground) : undefined,
+      borderColor: explicitBorder ?? state.borderColor,
+      gridlineColor: state.gridlineColor,
+      tableHeaderBackground: state.tableHeaderBackground ?? state.tableAccent,
+      tableRowAlt: state.tableRowAlt,
+      foreground: state.fg,
+      titleColor: explicitTitleColor ?? state.titleColor,
+      labelColor: explicitLabelColor ?? state.labelColor,
+      kpiGood: state.good,
+      kpiBad: state.bad,
+      kpiNeutral: state.neutral,
+    },
+    { primary, accent: state.accent },
+    locks,
+  )
+
+  const effectiveOutspaceBackground = deriveOutspaceBackground(set.canvasBackground)
 
   return {
     rawVisualBackground: resolveHex(rawVisualBackground, '#FFFFFF'),
-    effectiveCanvasBackground: resolveHex(effectiveCanvasBackground, '#FFFFFF'),
-    effectiveOutspaceBackground: resolveHex(effectiveOutspaceBackground, effectiveCanvasBackground),
-    effectiveVisualBackground: resolveHex(effectiveVisualBackground, rawVisualBackground),
-    effectiveTitleBackground: resolveHex(effectiveTitleBackground, effectiveVisualBackground),
-    effectiveBorderColor: resolveHex(effectiveBorderColor, '#E2E8F0'),
-    effectiveForeground: resolveHex(effectiveForeground, '#252423'),
-    effectiveTitleColor: resolveHex(effectiveTitleColor, effectiveForeground),
-    effectiveLabelColor: resolveHex(effectiveLabelColor, effectiveForeground),
+    effectiveCanvasBackground: set.canvasBackground,
+    effectiveOutspaceBackground: resolveHex(effectiveOutspaceBackground, set.canvasBackground),
+    effectiveVisualBackground: set.visualBackground,
+    effectiveTitleBackground: set.titleBackground,
+    effectiveBorderColor: set.borderColor,
+    effectiveGridlineColor: set.gridlineColor,
+    effectiveTableHeaderBackground: set.tableHeaderBackground,
+    effectiveTableRowAlt: set.tableRowAlt,
+    effectiveForeground: set.foreground,
+    effectiveTitleColor: set.titleColor,
+    effectiveLabelColor: set.labelColor,
+    effectiveKpiGood: set.kpiGood,
+    effectiveKpiBad: set.kpiBad,
+    effectiveKpiNeutral: set.kpiNeutral,
     primary,
     source: {
       canvasBackground: canvasBackgroundSource,

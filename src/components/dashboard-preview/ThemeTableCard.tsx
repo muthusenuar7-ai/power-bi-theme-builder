@@ -14,10 +14,19 @@ function toneColor(theme: DashboardTheme, tone: Tone): string {
   return theme.bad
 }
 
+function toneArrow(tone: Tone): string {
+  if (tone === 'ok') return '▲'
+  if (tone === 'warn') return '→'
+  return '▼'
+}
+
 /**
- * ThemeTableCard — compact ranked table. Header uses the theme table accent;
- * rows alternate with a faint theme-derived tint and the YoY pill uses
- * good/neutral/bad. No fixed/white backgrounds anywhere.
+ * ThemeTableCard — a clean Power BI matrix-style table. Every colour is theme
+ * driven: header uses the theme table-header background/text with a table-accent
+ * underline, rows alternate with the theme row-alt tint and a theme border
+ * separator, and the YoY column uses a subtle arrow indicator coloured by the
+ * theme's good/neutral/bad semantic colours (no badges, no data bars, no fixed
+ * red/green). Shows exactly the rows it is given (4) — no scroll, no hidden row.
  */
 export function ThemeTableCard({ theme, rows }: Props) {
   const headers: { key: keyof ProductRow; label: string; align: 'left' | 'right' }[] = [
@@ -26,9 +35,10 @@ export function ThemeTableCard({ theme, rows }: Props) {
     { key: 'margin',  label: 'Margin',  align: 'right' },
     { key: 'yoy',     label: 'YoY',     align: 'right' },
   ]
+  const visible = rows.slice(0, 4)
 
   return (
-    <div style={{ height: '100%', overflow: 'hidden' }}>
+    <div style={{ height: '100%', background: theme.visualBackground }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: theme.labelFontSize, tableLayout: 'fixed' }}>
         <thead>
           <tr>
@@ -43,8 +53,8 @@ export function ThemeTableCard({ theme, rows }: Props) {
                   fontSize: theme.headerFontSize,
                   textTransform: 'uppercase',
                   letterSpacing: '.03em',
-                  padding: '6px 8px',
-                  borderBottom: `1px solid ${theme.borderColor}`,
+                  padding: '5px 8px',
+                  borderBottom: `2px solid ${theme.tableAccent}`,
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -54,42 +64,42 @@ export function ThemeTableCard({ theme, rows }: Props) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, ri) => (
-            <tr key={row.product} style={{ background: ri % 2 === 1 ? theme.tableRowAlt : 'transparent' }}>
-              <td
+          {visible.map((row, ri) => {
+            const tc = toneColor(theme, row.tone)
+            const magnitude = row.yoy.replace(/^[+-]/, '')
+            return (
+              <tr
+                key={row.product}
                 style={{
-                  padding: '6px 8px',
-                  color: theme.foreground,
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  background: ri % 2 === 1 ? theme.tableRowAlt : 'transparent',
+                  borderBottom: `1px solid ${theme.borderColor}`,
                 }}
               >
-                {row.product}
-              </td>
-              <td style={{ padding: '6px 8px', textAlign: 'right', color: theme.foreground, whiteSpace: 'nowrap' }}>
-                {row.revenue}
-              </td>
-              <td style={{ padding: '6px 8px', textAlign: 'right', color: theme.mutedText, whiteSpace: 'nowrap' }}>
-                {row.margin}
-              </td>
-              <td style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                <span
+                <td
                   style={{
-                    fontSize: Math.max(9, theme.labelFontSize - 1),
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 20,
-                    color: toneColor(theme, row.tone),
-                    background: `color-mix(in srgb, ${toneColor(theme, row.tone)} 16%, transparent)`,
+                    padding: '5px 8px',
+                    color: theme.foreground,
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
-                  {row.yoy}
-                </span>
-              </td>
-            </tr>
-          ))}
+                  {row.product}
+                </td>
+                <td style={{ padding: '5px 8px', textAlign: 'right', color: theme.foreground, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  {row.revenue}
+                </td>
+                <td style={{ padding: '5px 8px', textAlign: 'right', color: theme.labelColor, whiteSpace: 'nowrap' }}>
+                  {row.margin}
+                </td>
+                <td style={{ padding: '5px 8px', textAlign: 'right', whiteSpace: 'nowrap', color: tc, fontWeight: 600 }}>
+                  <span style={{ marginRight: 3 }}>{toneArrow(row.tone)}</span>
+                  {magnitude}
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>

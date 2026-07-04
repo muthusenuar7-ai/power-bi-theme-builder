@@ -362,9 +362,11 @@ export function resolveEffectiveFormat(state: EffectiveFormatInput, visualId?: s
   const dividerWidth = Math.max(0, firstNumber(props, ['general.title.divider.width'], 1))
   const dividerStyle = lineStyleValue(firstString(props, ['general.title.divider.lineStyle'], 'Solid'))
   const shadow = shadowCss(shadowEnabled, shadowColor, props)
-  const themeGridline = normalizeHexColor(state.gridlineColor, mixColor(borderColor, surfaces.effectiveCanvasBackground, 0.44))
-  const themeTableHeader = normalizeHexColor(state.tableHeaderBackground, normalizeHexColor(state.tableAccent, primary))
-  const themeTableRowAlt = normalizeHexColor(state.tableRowAlt, visualBackgroundColor)
+  // The standard surface formula already validated (and corrected, if needed)
+  // the theme-declared gridline / table surfaces against the card background.
+  const themeGridline = surfaces.effectiveGridlineColor
+  const themeTableHeader = surfaces.effectiveTableHeaderBackground
+  const themeTableRowAlt = surfaces.effectiveTableRowAlt
 
   const axisLabelColor = scope
     ? firstColor(props, [`${scope}.xAxis.color`, `${scope}.yAxis.color`], labelColor)
@@ -427,9 +429,9 @@ export function resolveEffectiveFormat(state: EffectiveFormatInput, visualId?: s
     tableHeaderBackground: themeTableHeader,
     tableHeaderText: getReadableTextColor(themeTableHeader),
     tableRowAlt: themeTableRowAlt,
-    goodColor: normalizeHexColor(state.good, '#10B981'),
-    badColor: normalizeHexColor(state.bad, '#EF4444'),
-    neutralColor: normalizeHexColor(state.neutral, '#F59E0B'),
+    goodColor: surfaces.effectiveKpiGood,
+    badColor: surfaces.effectiveKpiBad,
+    neutralColor: surfaces.effectiveKpiNeutral,
     backgroundEnabled,
     backgroundTransparency,
     titleEnabled,

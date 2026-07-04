@@ -1,0 +1,251 @@
+/**
+ * Power BI–style pie / donut chart layout engine.
+ *
+ * All coordinates live in a fixed 240 × 126 SVG viewBox.
+ * The layout is computed purely from inputs — no React, no state.
+ *
+ * Legend position strings match the LEGEND_POSITIONS array in
+ * visualFormatSchema.ts (e.g. "Top left", "Center right", "Bottom center").
+ */
+
+/* ── Public types ─────────────────────────────────────────────────────── */
+
+export type LegendSide = 'right' | 'left' | 'top' | 'bottom' | 'none'
+
+export interface PieChartLayout {
+  /** SVG viewBox dimensions (fixed) */
+  vw: number
+  vh: number
+
+  /** Plot area — rectangle the circle is centred inside */
+  plotX: number
+  plotY: number
+  plotW: number
+  plotH: number
+
+  /** Circle geometry */
+  cx: number
+  cy: number
+  /** Outer radius */
+  r: number
+  /** Inner radius: r × 0.5 for donut, 0 for pie */
+  ri: number
+
+  /** Legend placement */
+  legendSide: LegendSide
+  legendX: number
+  legendY: number
+  /** True → items render side-by-side (top / bottom positions) */
+  legendIsHorizontal: boolean
+
+  /** Pre-computed label-line distances */
+  labelBendR: number   // radius of bend point = r + LABEL_LEADER
+  labelElbow: number   // horizontal segment length from bend to text anchor
+}
+
+export interface SliceLabel {
+  sliceIdx: number
+  isRight: boolean
+  edgeX: number
+  edgeY: number
+  bendX: number
+  y: number   // adjusted (overlap-resolved, clamped)
+}
+
+/* ── Internal constants ────────────────────────────────────────────────── */
+
+const VW = 240
+const VH = 126
+const OUTER_PAD = 4
+
+/** Vertical legend block (left / right positions) */
+const LEG_VERT_W   = 88    // block width
+const LEG_ITEM_H   = 14    // per-row height
+const LEG_VERT_GAP = 6     // gap between legend block and plot area
+
+/** Horizontal legend strip (top / bottom positions) */
+const LEG_HORIZ_H   = 14   // single-row height
+const LEG_HORIZ_GAP = 6
+
+/** Outside label geometry */
+const LABEL_LEADER = 10    // line from circle edge outward
+const LABEL_ELBOW  = 6     // horizontal segment from bend to text
+
+/**
+ * Fraction of min(plotW, plotH) used for the circle diameter.
+ * Smaller when labels are outside so leader lines stay inside the plot area.
+ */
+const FILL_WITH_LABELS    = 0.64
+const FILL_WITHOUT_LABELS = 0.88
+
+/* ── Helpers ───────────────────────────────────────────────────────────── */
+
+function f(n: number): number { return Math.round(n * 1000) / 1000 }
+
+/**
+ * Convert a PBI legend-position string ("Top left", "Center right", …)
+ * to a simplified four-way side enum used for layout calculations.
+ */
+function toLegendSide(pos: string): LegendSide {
+  const p = pos.toLowerCase().trim()
+  if (!p || p === 'none') return 'none'
+  if (p.includes('left'))   return 'left'
+  if (p.includes('right'))  return 'right'
+  if (p.includes('bottom')) return 'bottom'
+  return 'top'
+}
+
+/** Standard "0° = top, clockwise" polar angle → radians */
+export function polarRad(deg: number): number {
+  return ((deg - 90) * Math.PI) / 180
+}
+
+/* ── Main layout API ──────────────────────────────────────────────────── */
+
+/**
+ * Compute the complete pie / donut layout for the 240 × 126 viewBox.
+ *
+ * @param showLegend  Legend visibility
+ * @param legendPos   Position string from formatProps (e.g. "Top left")
+ * @param showLabels  Whether outside detail labels are visible
+ * @param numItems    Number of slice / legend items
+ * @param isDonut     Controls inner radius (ri = r × 0.5 for donut)
+ */
+export function computePieLayout(
+  showLegend: boolean,
+  legendPos: string,
+  showLabels: boolean,
+  numItems: number,
+  isDonut: boolean,
+): PieChartLayout {
+  const legendSide: LegendSide = showLegend ? toLegendSide(legendPos) : 'none'
+  const isHoriz = legendSide === 'top' || legendSide === 'bottom'
+
+  /* Start with the full padded area */
+  let px = OUTER_PAD
+  let py = OUTER_PAD
+  let pw = VW - OUTER_PAD * 2  // 232
+  let ph = VH - OUTER_PAD * 2  // 118
+
+  let legendX = 0
+  let legendY = 0
+  const legVertH = numItems * LEG_ITEM_H  // 5 × 14 = 70
+
+  switch (legendSide) {
+    case 'right':
+      legendX = px + pw - LEG_VERT_W          // right-align legend
+      legendY = py + Math.max(0, (ph - legVertH) / 2)
+      pw -= LEG_VERT_W + LEG_VERT_GAP         // shrink plot area
+      break
+    case 'left':
+      legendX = px                             // left-align legend
+      legendY = py + Math.max(0, (ph - legVertH) / 2)
+      px += LEG_VERT_W + LEG_VERT_GAP
+      pw -= LEG_VERT_W + LEG_VERT_GAP
+      break
+    case 'top':
+      legendX = px
+      legendY = py
+      py += LEG_HORIZ_H + LEG_HORIZ_GAP
+      ph -= LEG_HORIZ_H + LEG_HORIZ_GAP
+      break
+    case 'bottom':
+      legendX = px
+      legendY = py + ph - LEG_HORIZ_H         // pin to bottom of plot
+      ph -= LEG_HORIZ_H + LEG_HORIZ_GAP
+      break
+  }
+
+  /* Fit circle into the remaining plot area */
+  const fill = showLabels ? FILL_WITH_LABELS : FILL_WITHOUT_LABELS
+  const r    = Math.max(8, Math.min(pw, ph) / 2 * fill)
+  const ri   = isDonut ? r * 0.50 : 0
+  const cx   = f(px + pw / 2)
+  const cy   = f(py + ph / 2)
+
+  return {
+    vw: VW,
+    vh: VH,
+    plotX: px,
+    plotY: py,
+    plotW: pw,
+    plotH: ph,
+    cx,
+    cy,
+    r,
+    ri,
+    legendSide,
+    legendX,
+    legendY,
+    legendIsHorizontal: isHoriz,
+    labelBendR: r + LABEL_LEADER,
+    labelElbow:  LABEL_ELBOW,
+  }
+}
+
+/* ── Label-position helpers ──────────────────────────────────────────── */
+
+/**
+ * Compute the raw (pre-overlap-resolution) label position for one slice.
+ */
+export function sliceLabelPoint(
+  cx: number, cy: number,
+  r: number, bendR: number,
+  startDeg: number, endDeg: number,
+  sliceIdx: number,
+): SliceLabel {
+  const mid = (startDeg + endDeg) / 2
+  const rad = polarRad(mid)
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+
+  return {
+    sliceIdx,
+    isRight: cos >= 0,
+    edgeX: f(cx + r     * cos),
+    edgeY: f(cy + r     * sin),
+    bendX: f(cx + bendR * cos),
+    y:     f(cy + bendR * sin),
+  }
+}
+
+/**
+ * Push label y-positions apart so they don't overlap.
+ * Operates on one side (all-left or all-right) at a time.
+ * Returns a new sorted array — does not mutate inputs.
+ *
+ * @param labels   Label points for one side
+ * @param minGap   Minimum vertical gap between adjacent labels (px in viewBox units)
+ * @param yMin     Upper clamp bound (plotY + margin)
+ * @param yMax     Lower clamp bound (plotY + plotH − margin)
+ */
+export function resolveOverlap(
+  labels: SliceLabel[],
+  minGap: number,
+  yMin: number,
+  yMax: number,
+): SliceLabel[] {
+  if (labels.length === 0) return []
+
+  /* Work on copies so we don't mutate caller's objects */
+  let pts = labels.map((l) => ({ ...l })).sort((a, b) => a.y - b.y)
+
+  /* Forward pass — push lower label down when too close */
+  for (let i = 1; i < pts.length; i++) {
+    if (pts[i].y - pts[i - 1].y < minGap) {
+      pts[i] = { ...pts[i], y: pts[i - 1].y + minGap }
+    }
+  }
+
+  /* Backward pass — push upper label up when too close */
+  for (let i = pts.length - 2; i >= 0; i--) {
+    if (pts[i + 1].y - pts[i].y < minGap) {
+      pts[i] = { ...pts[i], y: pts[i + 1].y - minGap }
+    }
+  }
+
+  /* Clamp entire group to plot area */
+  pts = pts.map((p) => ({ ...p, y: Math.max(yMin, Math.min(p.y, yMax)) }))
+
+  return pts
+}

@@ -1,20 +1,29 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
-  Check, CheckCheck, ChevronLeft, ChevronRight, Copy, Download, FileCode,
-  Home, Image as ImageIcon, LayoutGrid, Link2, List, RotateCcw, Search, Star, Wand2, X,
+  ArrowUpRight, Check, CheckCheck, ChevronLeft, ChevronRight, Copy, Download,
+  Home, Image as ImageIcon, LayoutGrid, List, RotateCcw, Search, Shuffle, Star, Wand2, X,
 } from 'lucide-react'
 import type { IconLibraryItem } from '@/types'
 import type { IconLibraryCategoryFilter } from '@/lib/iconLibrary'
 import { findIconById, ICON_LIBRARY_CATEGORIES, ICON_LIBRARY_COUNT, isIconLibraryCategory, loadGeneratedIconLibrary, searchIcons } from '@/lib/iconLibrary'
-import { getFlagIcons, isFlagIcon } from '@/lib/flagLibrary'
+import { isFlagIcon } from '@/lib/flagLibrary'
 import { GRADIENT_LIBRARY, type LibraryGradient } from '@/lib/datacenseLibrary'
 import { createZip, strToBytes, type ZipEntry } from '@/lib/zipWriter'
 import { sanitizeHex } from '@/lib/colorUtils'
+import {
+  buildSingleSvg, hasOriginalMulticolor, rgbaFromHex, shapeRadiusCss, styleSvg,
+  type BgShape, type IconColorMode, type IconStyle, type IconWeight, type SheetOptions,
+} from '@/lib/iconRenderer'
+import { getIconDetails } from '@/lib/icon-library/adapter'
+import { getContrastRatio } from '@/lib/colorUtils'
+import { computePageCount } from '@/lib/iconPbitExporter'
 import { useThemeStore } from '@/store/themeStore'
+import { useIntegrationWorkspaceStore, type IconCustomization } from '@/store/integrationWorkspaceStore'
 import styles from './IconLibraryStudio.module.css'
 
 const PAGE_SIZE = 48
@@ -22,17 +31,36 @@ const FAVORITES_KEY = 'dc-icon-favorites'
 
 type SortOrder = 'name-asc' | 'name-desc' | 'category'
 type ViewMode = 'grid' | 'list'
-type IconStyle = 'precision' | 'softline' | 'framework' | 'heritage'
 type BackgroundMode = 'solid' | 'gradient' | 'none'
-type BgShape = 'none' | 'softtile' | 'rounded' | 'capsule' | 'circle'
-type IconWeight = 'thin' | 'regular' | 'medium' | 'bold'
 
-const STYLE_CARDS: { key: IconStyle; label: string; hint: string }[] = [
-  { key: 'precision', label: 'Precision', hint: 'Crisp outline' },
-  { key: 'softline', label: 'Softline', hint: 'Soft rounded' },
-  { key: 'framework', label: 'Framework', hint: 'Structured' },
-  { key: 'heritage', label: 'Heritage', hint: 'Classic simple' },
-]
+const DEFAULT_ICON_COLOR = '#0D9488'
+/** Permanent professional geometry for normal business icons — the former
+ *  Choose Style control was removed; Precision is the only rendered style. */
+const ICON_STYLE: IconStyle = 'precision'
+const DEFAULT_BG_MODE: BackgroundMode = 'none'
+const DEFAULT_BG_COLOR = '#FFFFFF'
+const DEFAULT_BG_OPACITY = 100
+const DEFAULT_BG_SHAPE: BgShape = 'rounded'
+const DEFAULT_WEIGHT: IconWeight = 'regular'
+const DEFAULT_SIZE = 28
+const DEFAULT_PADDING = 10
+
+/**
+ * Power BI template (.pbit) export is held in VALIDATION mode: the exporter
+ * was migrated to the same adm-zip + genuine-visual-cloning methodology as
+ * the (confirmed working) Layout Builder PBIT export — see
+ * src/lib/icon-studio/server/iconPbitService.ts — but a generated,
+ * non-identical icon-library template has not yet been manually confirmed to
+ * open in Power BI Desktop. Until then the button is hidden in production and
+ * shown only in development as a clearly-labelled diagnostic action, so
+ * normal users are never handed a possibly-corrupt file. SVG/PNG export is
+ * unaffected. Flip PBIT_EXPORT_VALIDATED to true once a generated file opens
+ * successfully.
+ */
+const PBIT_EXPORT_VALIDATED = false
+const PBIT_EXPORT_DEV_ONLY = process.env.NODE_ENV !== 'production'
+const PBIT_EXPORT_VISIBLE = PBIT_EXPORT_VALIDATED || PBIT_EXPORT_DEV_ONLY
+
 const BG_SHAPES: { key: BgShape; label: string }[] = [
   { key: 'none', label: 'None' }, { key: 'softtile', label: 'Soft Tile' }, { key: 'rounded', label: 'Rounded' },
   { key: 'capsule', label: 'Capsule' }, { key: 'circle', label: 'Circle' },
@@ -40,9 +68,26 @@ const BG_SHAPES: { key: BgShape; label: string }[] = [
 const ICON_WEIGHTS: { key: IconWeight; label: string }[] = [
   { key: 'thin', label: 'Thin' }, { key: 'regular', label: 'Regular' }, { key: 'medium', label: 'Medium' }, { key: 'bold', label: 'Bold' },
 ]
-const WEIGHT_STROKE: Record<IconWeight, number> = { thin: 1.1, regular: 1.75, medium: 2.4, bold: 3.2 }
-
+const COLOR_MODES: { key: IconColorMode; label: string }[] = [
+  { key: 'mono', label: 'Monochrome' }, { key: 'multicolor', label: 'Multicolor' },
+]
+const COLOR_MODE_NAMES: Record<IconColorMode, string> = { mono: 'Monochrome', multicolor: 'Original Multicolor' }
 const ICON_COLOR_SWATCHES = ['#0F172A', '#334155', '#2563EB', '#0EA5E9', '#0D9488', '#7C3AED', '#DB2777', '#DC2626', '#EA580C', '#CA8A04', '#16A34A', '#FFFFFF']
+
+/** Curated, dashboard-friendly Random Color palette — mid-tone members of the
+ *  blue/teal/green/purple/indigo/orange/red/gold/charcoal families. No pure
+ *  pastels (invisible on white) and no near-blacks (invisible on dark). */
+const RANDOM_COLOR_PALETTE = [
+  '#1D4ED8', '#2563EB', '#0369A1', // blue
+  '#0D9488', '#0F766E',            // teal
+  '#16A34A', '#15803D',            // green
+  '#7C3AED', '#9333EA',            // purple
+  '#4F46E5', '#4338CA',            // indigo
+  '#EA580C', '#C2410C',            // orange
+  '#DC2626', '#B91C1C',            // red
+  '#CA8A04', '#B45309',            // gold
+  '#334155', '#475569',            // charcoal
+]
 const BG_COLOR_SWATCHES = ['transparent', '#FFFFFF', '#F1F5F9', '#E2E8F0', '#0F172A', '#1E293B', '#2563EB', '#0EA5E9', '#DBEAFE', '#E0F2FE', '#FCE7F3', '#FEF3C7']
 const CHECKER_BG = 'repeating-conic-gradient(#e2e8f0 0% 25%, #ffffff 0% 50%) 50% / 14px 14px'
 const GRADIENT_OPTIONS: LibraryGradient[] = GRADIENT_LIBRARY.slice(0, 24)
@@ -51,82 +96,6 @@ const GRADIENT_OPTIONS: LibraryGradient[] = GRADIENT_LIBRARY.slice(0, 24)
 const SCOPE_CHIPS = ['All', 'Favorites', 'Recently Used'] as const
 const CATEGORY_CHIPS = ICON_LIBRARY_CATEGORIES.filter((c) => c !== 'All')
 const ALL_CHIPS: string[] = [...SCOPE_CHIPS, ...CATEGORY_CHIPS]
-
-function shapeRadiusCss(shape: BgShape): string {
-  if (shape === 'softtile') return '8px'
-  if (shape === 'rounded') return '16px'
-  if (shape === 'capsule') return '999px'
-  if (shape === 'circle') return '50%'
-  return '0'
-}
-function shapeRadiusExport(shape: BgShape, size: number): number {
-  if (shape === 'softtile') return 8
-  if (shape === 'rounded') return 16
-  if (shape === 'capsule' || shape === 'circle') return size / 2
-  return 0
-}
-function rgbaFromHex(hex: string, opacityPct: number): string {
-  if (!hex || hex === 'transparent') return 'transparent'
-  const c = sanitizeHex(hex)
-  return `rgba(${parseInt(c.slice(1, 3), 16)}, ${parseInt(c.slice(3, 5), 16)}, ${parseInt(c.slice(5, 7), 16)}, ${Math.max(0, Math.min(100, opacityPct)) / 100})`
-}
-
-/* ── SVG styling + export helpers ── */
-interface StyleOpts { iconColor: string; weight: IconWeight; style: IconStyle; isFlag: boolean }
-
-/** Recolour + apply weight/style to a tabler SVG and size it. Flags keep their
- *  own colours (no recolour, no stroke change). */
-function styleSvg(text: string, size: number, opts: StyleOpts): string {
-  let s = text.replace(/<\?xml[^>]*\?>/i, '').trim()
-  if (!opts.isFlag) {
-    const styleAttrs: Record<IconStyle, { cap: string; join: string; rendering: string; miter: string }> = {
-      precision: { cap: 'butt', join: 'miter', rendering: 'geometricPrecision', miter: '4' },
-      softline: { cap: 'round', join: 'round', rendering: 'auto', miter: '2' },
-      framework: { cap: 'square', join: 'miter', rendering: 'crispEdges', miter: '2' },
-      heritage: { cap: 'round', join: 'bevel', rendering: 'auto', miter: '1' },
-    }
-    const attrs = styleAttrs[opts.style]
-    s = s.replace(/currentColor/g, opts.iconColor)
-    s = setSvgAttr(s, 'stroke-width', String(WEIGHT_STROKE[opts.weight]))
-    s = setSvgAttr(s, 'stroke-linecap', attrs.cap)
-    s = setSvgAttr(s, 'stroke-linejoin', attrs.join)
-    s = setSvgAttr(s, 'stroke-miterlimit', attrs.miter)
-    s = setSvgAttr(s, 'shape-rendering', attrs.rendering)
-  }
-  s = s.replace(/<svg\b([^>]*)>/i, (_m, attrs: string) => `<svg${attrs.replace(/\s(width|height)="[^"]*"/g, '')} width="${size}" height="${size}">`)
-  return s
-}
-
-function setSvgAttr(svg: string, attr: string, value: string): string {
-  const re = new RegExp(`${attr}="[^"]*"`, 'i')
-  if (re.test(svg)) return svg.replace(re, `${attr}="${value}"`)
-  return svg.replace(/<svg\b([^>]*)>/i, (_m, attrs: string) => `<svg${attrs} ${attr}="${value}">`)
-}
-
-interface SheetOptions extends StyleOpts {
-  bgFill: string
-  bgShape: BgShape
-  padding: number
-  gradient: LibraryGradient | null
-}
-
-function gradientDefs(g: LibraryGradient, id: string): string {
-  const stops = g.stops.map((c, i) => `<stop offset="${((i / Math.max(1, g.stops.length - 1)) * 100).toFixed(1)}%" stop-color="${c}"/>`).join('')
-  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">${stops}</linearGradient></defs>`
-}
-
-function buildSingleSvg(text: string, boxSize: number, opts: SheetOptions, gid = 'dcg'): string {
-  const pad = Math.min(opts.padding, boxSize / 2 - 4)
-  const iconSize = Math.max(8, boxSize - pad * 2)
-  const useGrad = !!opts.gradient && opts.bgShape !== 'none'
-  const showBg = opts.bgShape !== 'none' && (useGrad || opts.bgFill !== 'transparent')
-  const defs = useGrad && opts.gradient ? gradientDefs(opts.gradient, gid) : ''
-  const fill = useGrad ? `url(#${gid})` : opts.bgFill
-  const bg = showBg
-    ? `<rect x="0" y="0" width="${boxSize}" height="${boxSize}" rx="${shapeRadiusExport(opts.bgShape, boxSize)}" ry="${shapeRadiusExport(opts.bgShape, boxSize)}" fill="${fill}"/>`
-    : ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${boxSize}" height="${boxSize}" viewBox="0 0 ${boxSize} ${boxSize}">${defs}${bg}<g transform="translate(${pad}, ${pad})">${styleSvg(text, iconSize, opts)}</g></svg>`
-}
 
 function downloadBlob(filename: string, blob: Blob): void {
   const url = URL.createObjectURL(blob)
@@ -170,9 +139,10 @@ function slug(name: string): string {
 /* ── Live inline-styled icon (so colour/weight/style render in the grid) ── */
 const SVG_CACHE = new Map<string, string>()
 function useInlineSvg(url: string): string | null {
-  const [text, setText] = useState<string | null>(() => SVG_CACHE.get(url) ?? null)
+  const [text, setText] = useState<string | null>(() => (url ? SVG_CACHE.get(url) ?? null : null))
   useEffect(() => {
     let active = true
+    if (!url) { setText(null); return () => { active = false } }
     const cached = SVG_CACHE.get(url)
     if (cached) {
       queueMicrotask(() => { if (active) setText(cached) })
@@ -184,15 +154,22 @@ function useInlineSvg(url: string): string | null {
   return text
 }
 
-function InlineStyledIcon({ url, color, size, weight, style, flag }: { url: string; color: string; size: number; weight: IconWeight; style: IconStyle; flag: boolean }) {
+function InlineStyledIcon({ url, color, size, weight, style, flag, colorMode }: {
+  url: string; color: string; size: number; weight: IconWeight; style: IconStyle; flag: boolean
+  colorMode?: IconColorMode
+}) {
   const text = useInlineSvg(url)
-  const html = useMemo(() => (text ? styleSvg(text, size, { iconColor: color, weight, style, isFlag: flag }) : ''), [text, color, size, weight, style, flag])
+  const html = useMemo(
+    () => (text ? styleSvg(text, size, { iconColor: color, weight, style, isFlag: flag, colorMode }) : ''),
+    [text, color, size, weight, style, flag, colorMode],
+  )
   return <span style={{ width: size, height: size, display: 'inline-grid', placeItems: 'center', lineHeight: 0 }} dangerouslySetInnerHTML={{ __html: html }} aria-hidden="true" />
 }
 
 function ControlGroup({ label, children }: { label: string; children: ReactNode }) {
   return <div className={styles.ctrlGroup}><div className={styles.fieldLabel}>{label}</div>{children}</div>
 }
+
 
 function Pager({ start, end, total, page, totalPages, onPrev, onNext }: { start: number; end: number; total: number; page: number; totalPages: number; onPrev: () => void; onNext: () => void }) {
   return (
@@ -222,15 +199,20 @@ export function IconLibraryStudio() {
   const [multiSelect, setMultiSelect] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
-  const [iconStyle, setIconStyle] = useState<IconStyle>('framework')
-  const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>('none')
-  const [solidBackgroundColor, setSolidBackgroundColor] = useState('#FFFFFF')
-  const [bgOpacity, setBgOpacity] = useState(100)
-  const [bgShape, setBgShape] = useState<BgShape>('rounded')
+  // Permanent Precision geometry — no user style selection.
+  const iconStyle = ICON_STYLE
+  // Default = Multicolor: icons with a reference multicolor variant open in
+  // their original designed colors; icons without one fall back to mono.
+  const [colorMode, setColorMode] = useState<IconColorMode>('multicolor')
+  const [variantsOpen, setVariantsOpen] = useState(false)
+  const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>(DEFAULT_BG_MODE)
+  const [solidBackgroundColor, setSolidBackgroundColor] = useState(DEFAULT_BG_COLOR)
+  const [bgOpacity, setBgOpacity] = useState(DEFAULT_BG_OPACITY)
+  const [bgShape, setBgShape] = useState<BgShape>(DEFAULT_BG_SHAPE)
   const [selectedGradient, setSelectedGradient] = useState<LibraryGradient | null>(null)
-  const [iconWeight, setIconWeight] = useState<IconWeight>('regular')
-  const [iconSize, setIconSize] = useState(28)
-  const [iconPadding, setIconPadding] = useState(10)
+  const [iconWeight, setIconWeight] = useState<IconWeight>(DEFAULT_WEIGHT)
+  const [iconSize, setIconSize] = useState(DEFAULT_SIZE)
+  const [iconPadding, setIconPadding] = useState(DEFAULT_PADDING)
 
   const [copied, setCopied] = useState<string | null>(null)
   const [exporting, setExporting] = useState<string | null>(null)
@@ -245,8 +227,24 @@ export function IconLibraryStudio() {
   const iconColor = selectedIconColor
   const setIconColorAll = useCallback((v: string) => setSelectedIconColor(v), [setSelectedIconColor])
 
-  // Monochrome library + generated country flags merged into one searchable set.
-  const icons = useMemo(() => [...baseIcons, ...getFlagIcons()], [baseIcons])
+  // ── Cross-module integration (Layout Builder handoff) ──
+  // NOTE: the former ?applyTheme=1 theme-to-icon recoloring flow was removed
+  // (final color-mode decision) — themes never overwrite icon colors.
+  const router = useRouter()
+  const [returnTo, setReturnTo] = useState<string | null>(null)
+  const setIconBundle = useIntegrationWorkspaceStore((s) => s.setIconBundle)
+  const setIntegrationSourceModule = useIntegrationWorkspaceStore((s) => s.setSourceModule)
+  const setIntegrationReturnRoute = useIntegrationWorkspaceStore((s) => s.setReturnRoute)
+
+  // Read query params on the client only — avoids the Next.js requirement to
+  // wrap useSearchParams() in a Suspense boundary for this otherwise-static page.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    setReturnTo(new URLSearchParams(window.location.search).get('returnTo'))
+  }, [])
+
+  // Production gallery: the loader already contains business icons + flags.
+  const icons = baseIcons
 
   useEffect(() => {
     let active = true
@@ -262,6 +260,21 @@ export function IconLibraryStudio() {
       try { const raw = localStorage.getItem(FAVORITES_KEY); if (raw) setFavorites(JSON.parse(raw) as string[]) } catch { /* ignore */ }
     })
   }, [])
+
+  // Migration (library switch, 2026-07): favorites may contain ids from the
+  // removed legacy library (tabler-*/custom-*). Once the production registry
+  // is loaded, silently drop ids that no longer resolve — flags and curated
+  // business icons survive; removed icons are not recreated.
+  useEffect(() => {
+    if (icons.length === 0 || favorites.length === 0) return
+    const valid = new Set(icons.map((i) => i.id))
+    const cleaned = favorites.filter((id) => valid.has(id))
+    if (cleaned.length !== favorites.length) {
+      setFavorites(cleaned)
+      try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(cleaned)) } catch { /* ignore */ }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [icons, favorites.length])
 
   const toggleFavorite = useCallback((id: string) => {
     setFavorites((prev) => {
@@ -295,13 +308,9 @@ export function IconLibraryStudio() {
   const goPrev = () => setPage((p) => Math.max(0, p - 1))
   const goNext = () => setPage((p) => Math.min(totalPages - 1, p + 1))
 
-  const selectedIcon = findIconById(icons, selectedIconId) ?? findIconById(icons, 'tabler-chart-bar') ?? filtered[0]
-  const relativeUrl = selectedIcon?.url ?? '/icon-library/tabler/chart-bar.svg'
-  const fullUrl = typeof window === 'undefined' || relativeUrl.startsWith('data:') ? relativeUrl : `${window.location.origin}${relativeUrl}`
+  const selectedIcon = findIconById(icons, selectedIconId) ?? findIconById(icons, 'v2-bar-chart') ?? filtered[0]
+  const relativeUrl = selectedIcon?.url ?? ''
   const selectedCount = selectedIds.length
-  const fullIconUrl = useCallback((url: string) => (
-    typeof window === 'undefined' || url.startsWith('data:') ? url : `${window.location.origin}${url}`
-  ), [])
 
   const flash = useCallback((key: string) => { setCopied(key); window.setTimeout(() => setCopied(null), 1700) }, [])
   const copyText = useCallback(async (text: string, key: string) => {
@@ -321,11 +330,15 @@ export function IconLibraryStudio() {
     weight: iconWeight,
     style: iconStyle,
     isFlag,
+    // 'multicolor' renders the ORIGINAL reference geometry (per icon; icons
+    // without a reference multicolor variant fall back to mono inside the
+    // renderer) — exports therefore always match the preview.
+    colorMode,
     bgFill: backgroundMode === 'solid' ? rgbaFromHex(solidBackgroundColor, bgOpacity) : 'transparent',
     bgShape: backgroundMode === 'none' ? 'none' : bgShape,
     padding: Math.round(iconPadding * (256 / 72)),
     gradient: backgroundMode === 'gradient' ? selectedGradient : null,
-  }), [iconColor, iconWeight, iconStyle, backgroundMode, solidBackgroundColor, bgOpacity, bgShape, iconPadding, selectedGradient])
+  }), [iconColor, iconWeight, iconStyle, colorMode, backgroundMode, solidBackgroundColor, bgOpacity, bgShape, iconPadding, selectedGradient])
 
   const fetchText = useCallback(async (url: string) => {
     const cached = SVG_CACHE.get(url)
@@ -391,6 +404,40 @@ export function IconLibraryStudio() {
     } finally { setExporting(null) }
   }, [exporting, selectedExportList, downloadIconPng, exportPngZip])
 
+  const handleExportPbit = useCallback(async () => {
+    if (exporting) return
+    const list = selectedExportList()
+    if (list.length === 0) return
+    setExporting('pbit')
+    try {
+      const renderedIcons = (await Promise.all(list.map(async (icon) => {
+        const svgText = await fetchText(icon.url)
+        if (!svgText) return null
+        const svg = buildSingleSvg(svgText, 256, sheetOptions(isFlagIcon(icon.id)))
+        return { id: icon.id, name: icon.name, svg }
+      }))).filter((x): x is { id: string; name: string; svg: string } => Boolean(x))
+      if (renderedIcons.length === 0) return
+
+      const res = await fetch('/api/icon-studio/export/pbit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ icons: renderedIcons }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error || 'Could not export the Power BI template.')
+      }
+      const blob = await res.blob()
+      const disposition = res.headers.get('Content-Disposition') || ''
+      const filenameMatch = /filename="([^"]+)"/.exec(disposition)
+      downloadBlob(filenameMatch?.[1] || 'datacense-icon-library.pbit', blob)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Could not export the Power BI template.')
+    } finally {
+      setExporting(null)
+    }
+  }, [exporting, selectedExportList, fetchText, sheetOptions])
+
   const handleDownloadCategorySvg = useCallback(async () => {
     if (exporting || filtered.length === 0) return
     setExporting('category-svg')
@@ -405,20 +452,44 @@ export function IconLibraryStudio() {
     finally { setExporting(null) }
   }, [exporting, filtered, activeChip, exportPngZip])
 
-  const copySelectedSvg = useCallback(async () => {
-    if (!selectedIcon) return
-    const text = await fetchText(selectedIcon.url)
-    if (text) await copyText(buildSingleSvg(text, 256, sheetOptions(isFlagIcon(selectedIcon.id))), 'svg')
-  }, [selectedIcon, fetchText, sheetOptions, copyText])
-
-  const copyUrls = useCallback((relative: boolean) => {
-    if (multiSelect && selectedCount > 0) {
-      const urls = selectedIds.map((id) => byId.get(id)).filter((x): x is IconLibraryItem => Boolean(x)).map((i) => (relative ? i.url : fullIconUrl(i.url)))
-      void copyText(urls.join('\n'), relative ? 'rel' : 'url')
-    } else {
-      void copyText(relative ? relativeUrl : fullUrl, relative ? 'rel' : 'url')
+  /**
+   * Copy URL — a REAL absolute URL to the public render endpoint
+   * (/api/icons/render/[iconId].svg) carrying the current customization as
+   * safe query parameters. Opening it in a browser returns the rendered SVG.
+   * Multicolor icons and flags keep their fixed colors (the endpoint ignores
+   * recoloring parameters for them).
+   */
+  const renderIconUrl = useCallback((icon: IconLibraryItem): string => {
+    const url = new URL(`/api/icons/render/${encodeURIComponent(icon.id)}.svg`, window.location.origin)
+    const flag = isFlagIcon(icon.id)
+    if (!flag && !icon.fixedColors) {
+      url.searchParams.set('mode', colorMode)
+      if (colorMode === 'mono') {
+        url.searchParams.set('color', sanitizeHex(iconColor))
+        url.searchParams.set('weight', iconWeight)
+      }
     }
-  }, [multiSelect, selectedCount, selectedIds, byId, fullIconUrl, relativeUrl, fullUrl, copyText])
+    if (backgroundMode === 'solid' && solidBackgroundColor !== 'transparent') {
+      url.searchParams.set('bg', 'solid')
+      url.searchParams.set('bgColor', sanitizeHex(solidBackgroundColor))
+      url.searchParams.set('bgOpacity', String(bgOpacity))
+      url.searchParams.set('shape', bgShape)
+    }
+    if (iconPadding !== DEFAULT_PADDING) url.searchParams.set('padding', String(iconPadding))
+    return url.toString()
+  }, [colorMode, iconColor, iconWeight, backgroundMode, solidBackgroundColor, bgOpacity, bgShape, iconPadding])
+
+  const copyUrls = useCallback(() => {
+    if (multiSelect && selectedCount > 0) {
+      const urls = selectedIds.map((id) => byId.get(id)).filter((x): x is IconLibraryItem => Boolean(x)).map(renderIconUrl)
+      void copyText(urls.join('\n'), 'url')
+    } else if (selectedIcon) {
+      void copyText(renderIconUrl(selectedIcon), 'url')
+    }
+  }, [multiSelect, selectedCount, selectedIds, byId, renderIconUrl, selectedIcon, copyText])
+
+  const pbitExportCount = multiSelect && selectedCount > 0 ? selectedCount : selectedIcon ? 1 : 0
+  const pbitPageCount = pbitExportCount > 0 ? computePageCount(pbitExportCount) : 0
 
   const selectAllVisible = useCallback(() => {
     if (!multiSelect) setMultiSelect(true)
@@ -430,9 +501,85 @@ export function IconLibraryStudio() {
   }, [multiSelect, filtered])
   const clearSelection = useCallback(() => setSelectedIds([]), [])
 
+  /**
+   * Reset: restores default color/size/padding/background/shape/opacity/
+   * weight/style while PRESERVING the selected icon. In Multicolor mode this
+   * is "Reset to Original" — the reference multicolor geometry is re-rendered
+   * from the registry source (it is never mutated, so restoring presentation
+   * defaults is sufficient to show the exact original).
+   */
   const resetCustomization = useCallback(() => {
-    setIconStyle('framework'); setBackgroundMode('none'); setSolidBackgroundColor('#FFFFFF'); setBgOpacity(100); setBgShape('rounded'); setSelectedGradient(null); setIconWeight('regular'); setIconSize(28); setIconPadding(10)
-  }, [])
+    setBackgroundMode(DEFAULT_BG_MODE); setSolidBackgroundColor(DEFAULT_BG_COLOR); setBgOpacity(DEFAULT_BG_OPACITY); setBgShape(DEFAULT_BG_SHAPE); setSelectedGradient(null); setIconWeight(DEFAULT_WEIGHT); setIconSize(DEFAULT_SIZE); setIconPadding(DEFAULT_PADDING)
+    setIconColorAll(DEFAULT_ICON_COLOR)
+  }, [setIconColorAll])
+
+  /** Mono-only: restore just the default single icon color. */
+  const resetColor = useCallback(() => setIconColorAll(DEFAULT_ICON_COLOR), [setIconColorAll])
+
+  // ── Random Color (Monochrome only) ──
+  // Picks from the curated professional palette, never repeats the previous
+  // pick, and skips colors with poor contrast against the current preview
+  // background (solid background color, or white for none/gradient).
+  const lastRandomColorRef = useRef<string | null>(null)
+  const randomColor = useCallback(() => {
+    const bg = backgroundMode === 'solid' && solidBackgroundColor !== 'transparent'
+      ? sanitizeHex(solidBackgroundColor)
+      : '#FFFFFF'
+    const current = sanitizeHex(iconColor).toUpperCase()
+    const usable = RANDOM_COLOR_PALETTE.filter(
+      (c) => c !== lastRandomColorRef.current && c !== current && getContrastRatio(c, bg) >= 2,
+    )
+    const pool = usable.length > 0
+      ? usable
+      : RANDOM_COLOR_PALETTE.filter((c) => c !== lastRandomColorRef.current && c !== current)
+    const choice = pool[Math.floor(Math.random() * pool.length)] ?? RANDOM_COLOR_PALETTE[0]
+    lastRandomColorRef.current = choice
+    setIconColorAll(choice)
+  }, [backgroundMode, solidBackgroundColor, iconColor, setIconColorAll])
+
+  // ── Selected-icon capability + details ──
+  const selectedSvgText = useInlineSvg(relativeUrl)
+  const selectedIsFlag = selectedIcon ? isFlagIcon(selectedIcon.id) : false
+  // Fixed-color artwork (3D Analytics) always renders its original multicolor
+  // design — like flags, it is never recolored or run through Precision.
+  const selectedIsFixed = Boolean(selectedIcon?.fixedColors)
+  // Multicolor is available ONLY when the reference library supplies an
+  // original multicolor variant — a fake version is never generated.
+  const selectedHasMulticolor = !selectedIsFlag && !!selectedSvgText && hasOriginalMulticolor(selectedSvgText)
+  const effectiveMode: IconColorMode = selectedIsFixed || (colorMode === 'multicolor' && selectedHasMulticolor) ? 'multicolor' : 'mono'
+  const iconDetails = useMemo(() => (selectedIcon ? getIconDetails(selectedIcon) : null), [selectedIcon])
+  const contrastWarning = effectiveMode === 'mono' && !selectedIsFlag
+    && backgroundMode === 'solid' && solidBackgroundColor !== 'transparent'
+    && getContrastRatio(sanitizeHex(iconColor), sanitizeHex(solidBackgroundColor)) < 3
+
+  const addIconsToLayoutBuilder = useCallback(() => {
+    const list = selectedExportList()
+    if (list.length === 0) return
+    const uniqueIds = Array.from(new Set(list.map((icon) => icon.id)))
+    const customization: IconCustomization = {
+      iconColor: sanitizeHex(iconColor),
+      weight: iconWeight,
+      style: iconStyle,
+      backgroundMode,
+      solidBackgroundColor,
+      bgOpacity,
+      bgShape,
+      gradient: selectedGradient
+        ? { code: selectedGradient.code, name: selectedGradient.name, stops: selectedGradient.stops }
+        : null,
+      padding: iconPadding,
+      size: iconSize,
+      colorMode,
+    }
+    setIconBundle({ iconIds: uniqueIds, customization })
+    setIntegrationSourceModule('icon-studio')
+    setIntegrationReturnRoute('/layout-builder')
+    router.push('/layout-builder?includeIcons=1')
+  }, [
+    selectedExportList, iconColor, iconWeight, iconStyle, backgroundMode, solidBackgroundColor,
+    bgOpacity, bgShape, selectedGradient, iconPadding, iconSize, colorMode,
+    setIconBundle, setIntegrationSourceModule, setIntegrationReturnRoute, router,
+  ])
 
   const onIconClick = useCallback((icon: IconLibraryItem) => {
     if (multiSelect) setSelectedIds((prev) => (prev.includes(icon.id) ? prev.filter((x) => x !== icon.id) : [...prev, icon.id]))
@@ -457,7 +604,7 @@ export function IconLibraryStudio() {
       {isFlagIcon(icon.id)
         ? // eslint-disable-next-line @next/next/no-img-element
           <img src={icon.url} width={size} height={size} alt={icon.name} style={{ objectFit: 'contain', display: 'block' }} />
-        : <InlineStyledIcon url={icon.url} color={iconColor} size={size} weight={iconWeight} style={iconStyle} flag={false} />}
+        : <InlineStyledIcon url={icon.url} color={iconColor} size={size} weight={iconWeight} style={iconStyle} flag={false} colorMode={icon.fixedColors ? 'multicolor' : colorMode} />}
     </span>
   )
 
@@ -475,7 +622,9 @@ export function IconLibraryStudio() {
         <div style={{ flex: 1 }} />
         <div className="nav-actions">
           <Link className={`nav-btn ${styles.lift}`} href="/" title="Back to home"><Home size={13} strokeWidth={2} /> Home</Link>
-          <Link className={`nav-btn accent ${styles.lift}`} href="/editor" title="Open Theme Builder"><Wand2 size={13} strokeWidth={2} /> Theme Builder</Link>
+          <Link className={`nav-btn accent ${styles.lift}`} href="/editor" title="Open Theme Builder">
+            <Wand2 size={13} strokeWidth={2} /> {returnTo === '/editor' ? 'Back to Theme Builder' : 'Theme Builder'}
+          </Link>
         </div>
       </header>
 
@@ -484,17 +633,69 @@ export function IconLibraryStudio() {
         <aside className={styles.left} aria-label="Icon customization">
           <p className={styles.groupLabel}>Customize</p>
 
-          <ControlGroup label="Icon color">
-            <div className={styles.swatchRow}>
-              {ICON_COLOR_SWATCHES.map((c) => (
-                <button key={c} type="button" className={`${styles.swatch} ${sanitizeHex(iconColor) === sanitizeHex(c) ? styles.swatchActive : ''}`} style={{ background: c }} onClick={() => setIconColorAll(c.toUpperCase())} title={c} aria-label={`Icon colour ${c}`} />
-              ))}
-            </div>
-            <div className={styles.colorRow}>
-              <input type="color" className={styles.colorSwatch} value={sanitizeHex(iconColor)} onChange={(e) => setIconColorAll(e.target.value.toUpperCase())} aria-label="Icon colour picker" />
-              <input className={styles.hexInput} value={iconColor} onChange={(e) => setIconColorAll(e.target.value)} onBlur={(e) => setIconColorAll(sanitizeHex(e.currentTarget.value).toUpperCase())} aria-label="Icon hex colour" spellCheck={false} />
-            </div>
-          </ControlGroup>
+          {!selectedIsFlag && !selectedIsFixed && (
+            <ControlGroup label="Color mode">
+              <div className={styles.pillRow} role="group" aria-label="Color mode">
+                {COLOR_MODES.map((m) => {
+                  const disabled = m.key === 'multicolor' && !selectedHasMulticolor
+                  return (
+                    <button
+                      key={m.key}
+                      type="button"
+                      className={`${styles.pill} ${effectiveMode === m.key ? styles.pillActive : ''}`}
+                      onClick={() => !disabled && setColorMode(m.key)}
+                      disabled={disabled}
+                      aria-pressed={effectiveMode === m.key}
+                      title={disabled ? 'Multicolor variant not available' : COLOR_MODE_NAMES[m.key]}
+                      style={disabled ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
+                    >
+                      {m.label}
+                    </button>
+                  )
+                })}
+              </div>
+              {!selectedHasMulticolor && (
+                <p className={styles.helperNote} style={{ marginTop: 6 }}>Multicolor variant not available for this icon.</p>
+              )}
+              {effectiveMode === 'multicolor' && (
+                <p className={styles.helperNote} style={{ marginTop: 6 }}>
+                  Original reference colors — this icon&apos;s designed multicolor palette is preserved exactly and is not editable.
+                </p>
+              )}
+            </ControlGroup>
+          )}
+
+          {!selectedIsFlag && effectiveMode === 'mono' && (
+            <ControlGroup label="Icon color">
+              <div className={styles.swatchRow}>
+                {ICON_COLOR_SWATCHES.map((c) => (
+                  <button key={c} type="button" className={`${styles.swatch} ${sanitizeHex(iconColor) === sanitizeHex(c) ? styles.swatchActive : ''}`} style={{ background: c }} onClick={() => setIconColorAll(c.toUpperCase())} title={c} aria-label={`Icon colour ${c}`} />
+                ))}
+              </div>
+              <div className={styles.colorRow}>
+                <input type="color" className={styles.colorSwatch} value={sanitizeHex(iconColor)} onChange={(e) => setIconColorAll(e.target.value.toUpperCase())} aria-label="Icon colour picker" />
+                <input className={styles.hexInput} value={iconColor} onChange={(e) => setIconColorAll(e.target.value)} onBlur={(e) => setIconColorAll(sanitizeHex(e.currentTarget.value).toUpperCase())} aria-label="Icon hex colour" spellCheck={false} />
+              </div>
+              <div className={styles.pillRow} style={{ marginTop: 6 }}>
+                <button type="button" className={styles.pill} onClick={randomColor} title="Pick a random color from a curated, dashboard-friendly palette">
+                  <Shuffle size={11} strokeWidth={2.4} style={{ marginRight: 4, verticalAlign: '-1px' }} />Random Color
+                </button>
+                <button type="button" className={styles.pill} onClick={resetColor} title="Restore the default icon color">Reset Color</button>
+              </div>
+            </ControlGroup>
+          )}
+
+          {selectedIsFlag && (
+            <p className={styles.helperNote} style={{ marginBottom: 10 }}>
+              Official country flag — original colors and proportions are always preserved. Color controls do not apply.
+            </p>
+          )}
+
+          {selectedIsFixed && (
+            <p className={styles.helperNote} style={{ marginBottom: 10 }}>
+              Fixed-color 3D artwork — the curated palette is always preserved. Color controls do not apply.
+            </p>
+          )}
 
           <ControlGroup label="Background mode">
             <div className={styles.pillRow} role="group" aria-label="Background mode">
@@ -594,11 +795,13 @@ export function IconLibraryStudio() {
             </div>
           </ControlGroup>
 
-          <ControlGroup label="Icon weight">
-            <div className={styles.pillRow} role="group" aria-label="Icon weight">
-              {ICON_WEIGHTS.map((w) => <button key={w.key} type="button" className={`${styles.pill} ${iconWeight === w.key ? styles.pillActive : ''}`} onClick={() => setIconWeight(w.key)} aria-pressed={iconWeight === w.key}>{w.label}</button>)}
-            </div>
-          </ControlGroup>
+          {effectiveMode === 'mono' && !selectedIsFlag && (
+            <ControlGroup label="Icon weight">
+              <div className={styles.pillRow} role="group" aria-label="Icon weight">
+                {ICON_WEIGHTS.map((w) => <button key={w.key} type="button" className={`${styles.pill} ${iconWeight === w.key ? styles.pillActive : ''}`} onClick={() => setIconWeight(w.key)} aria-pressed={iconWeight === w.key}>{w.label}</button>)}
+              </div>
+            </ControlGroup>
+          )}
 
           <ControlGroup label={`Icon size — ${iconSize}px`}>
             <input type="range" min={16} max={48} value={iconSize} onChange={(e) => setIconSize(Number(e.target.value))} className={styles.slider} aria-label="Icon size" />
@@ -608,21 +811,18 @@ export function IconLibraryStudio() {
             <input type="range" min={0} max={24} value={iconPadding} onChange={(e) => setIconPadding(Number(e.target.value))} className={styles.slider} aria-label="Padding" />
           </ControlGroup>
 
-          <button type="button" className={styles.resetBtn} onClick={resetCustomization}><RotateCcw size={14} strokeWidth={2} /> Reset customization</button>
+          <button
+            type="button"
+            className={styles.resetBtn}
+            onClick={resetCustomization}
+            title="Restore default color, size, padding, background, shape and opacity — the selected icon stays selected"
+          >
+            <RotateCcw size={14} strokeWidth={2} /> {effectiveMode === 'multicolor' ? 'Reset to Original' : 'Reset to icon defaults'}
+          </button>
         </aside>
 
-        {/* CENTER — style + search + categories + grid */}
+        {/* CENTER — search + categories + grid */}
         <section className={styles.center} aria-label="Icon browser">
-          <p className={styles.groupLabel}>Choose Style</p>
-          <div className={styles.styleCards}>
-            {STYLE_CARDS.map((s) => (
-              <button key={s.key} type="button" className={`${styles.styleCard} ${iconStyle === s.key ? styles.styleCardActive : ''}`} onClick={() => setIconStyle(s.key)} aria-pressed={iconStyle === s.key}>
-                <span className={styles.styleCardName}>{s.label}</span>
-                <span className={styles.styleCardHint}>{s.hint}</span>
-              </button>
-            ))}
-          </div>
-
           <div className={styles.toolbar}>
             <div className={styles.searchWrap}>
               <Search size={16} strokeWidth={2} />
@@ -727,29 +927,85 @@ export function IconLibraryStudio() {
                   {selectedIcon && isFlagIcon(selectedIcon.id)
                     ? // eslint-disable-next-line @next/next/no-img-element
                       <img src={relativeUrl} width={Math.max(48, iconSize * 2.2)} height={Math.max(48, iconSize * 2.2)} alt={selectedIcon.name} style={{ objectFit: 'contain' }} />
-                    : <InlineStyledIcon url={relativeUrl} color={iconColor} size={Math.max(44, iconSize * 2.4)} weight={iconWeight} style={iconStyle} flag={false} />}
+                    : <InlineStyledIcon url={relativeUrl} color={iconColor} size={Math.max(44, iconSize * 2.4)} weight={iconWeight} style={iconStyle} flag={false} colorMode={effectiveMode} />}
                 </span>
               </div>
 
               <div>
                 <h2 className={styles.previewName}>{selectedIcon?.name ?? 'Chart Bar'}</h2>
-                <p className={styles.previewMeta}>{STYLE_CARDS.find((s) => s.key === iconStyle)?.label} · {ICON_WEIGHTS.find((w) => w.key === iconWeight)?.label} · {iconSize}px</p>
+                <p className={styles.previewMeta}>
+                  {effectiveMode === 'multicolor'
+                    ? `${COLOR_MODE_NAMES.multicolor} · ${iconSize}px`
+                    : `${ICON_WEIGHTS.find((w) => w.key === iconWeight)?.label} · ${COLOR_MODE_NAMES.mono} · ${iconSize}px`}
+                </p>
+              </div>
+
+              {iconDetails && (
+                <div className={styles.urlBox} style={{ display: 'grid', gap: 5, fontSize: 11.5, lineHeight: 1.45 }}>
+                  <span><strong>Category:</strong> {selectedIcon?.primaryCategory ?? selectedIcon?.category}</span>
+                  <span><strong>Usage:</strong> {iconDetails.usage}</span>
+                  <span><strong>Power BI:</strong> {iconDetails.recommendedUse}</span>
+                  {iconDetails.supportedColorModes && <span><strong>Color modes:</strong> {iconDetails.supportedColorModes.join(' · ')}</span>}
+                  {iconDetails.aliases.length > 0 && <span><strong>Also known as:</strong> {iconDetails.aliases.join(', ')}</span>}
+                  {selectedIsFlag && <span style={{ color: 'var(--studio-accent, #0D9488)' }}>Official country flag — original colours and proportions are always preserved; recolouring does not apply.</span>}
+                  {contrastWarning && (
+                    <span style={{ color: '#B45309' }}>Low icon/background contrast — pick a stronger colour (try Random Color).</span>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <button
+                  type="button"
+                  className={styles.copyBtn}
+                  style={{ width: '100%' }}
+                  onClick={() => setVariantsOpen((v) => !v)}
+                  aria-expanded={variantsOpen}
+                >
+                  <Wand2 size={14} /> {variantsOpen ? 'Hide Variant Browser' : 'Browse Variants (weight)'}
+                </button>
+                {variantsOpen && !selectedIsFlag && effectiveMode === 'mono' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginTop: 8 }}>
+                    {ICON_WEIGHTS.map((w) => (
+                      <button
+                        key={w.key}
+                        type="button"
+                        onClick={() => setIconWeight(w.key)}
+                        title={w.label}
+                        aria-label={`Apply ${w.label} weight`}
+                        style={{
+                          display: 'grid', placeItems: 'center', padding: 6, borderRadius: 8, cursor: 'pointer',
+                          border: iconWeight === w.key ? '2px solid var(--studio-accent, #0D9488)' : '1px solid rgba(15,23,42,.12)',
+                          background: '#fff',
+                        }}
+                      >
+                        <InlineStyledIcon url={relativeUrl} color={iconColor} size={22} weight={w.key} style={iconStyle} flag={false} colorMode="mono" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {variantsOpen && selectedIsFlag && (
+                  <p className={styles.helperNote}>Country flags render in their official artwork — weight variants apply to outline icons only.</p>
+                )}
+                {variantsOpen && !selectedIsFlag && effectiveMode === 'multicolor' && (
+                  <p className={styles.helperNote}>Original multicolor icons render exactly as designed — weight variants apply in Monochrome mode.</p>
+                )}
               </div>
 
               <div>
                 <div className={styles.fieldLabel}>Preview in Context</div>
                 <div className={styles.contextStack}>
                   <div className={styles.kpiCard}>
-                    <span className={styles.iconBg} style={iconBgStyle}>{selectedIcon && isFlagIcon(selectedIcon.id) ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={relativeUrl} width={20} height={20} alt="" /> : <InlineStyledIcon url={relativeUrl} color={iconColor} size={20} weight={iconWeight} style={iconStyle} flag={false} />}</span>
+                    <span className={styles.iconBg} style={iconBgStyle}>{selectedIcon && isFlagIcon(selectedIcon.id) ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={relativeUrl} width={20} height={20} alt="" /> : <InlineStyledIcon url={relativeUrl} color={iconColor} size={20} weight={iconWeight} style={iconStyle} flag={false} colorMode={effectiveMode} />}</span>
                     <div style={{ minWidth: 0 }}><div className={styles.kpiValue}>$1.24M</div><div className={styles.kpiLabel}>Total Revenue</div></div>
                     <div className={styles.kpiDelta}>▲ 12.4%</div>
                   </div>
                   <div className={styles.kpiTile} style={{ background: sanitizeHex(themePrimary || '#2563EB') }}>
-                    <span className={styles.iconBg} style={{ ...iconBgStyle, background: backgroundMode === 'none' ? 'rgba(255,255,255,.18)' : iconBgStyle.background }}>{selectedIcon && isFlagIcon(selectedIcon.id) ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={relativeUrl} width={20} height={20} alt="" /> : <InlineStyledIcon url={relativeUrl} color={backgroundMode === 'none' ? '#FFFFFF' : iconColor} size={20} weight={iconWeight} style={iconStyle} flag={false} />}</span>
+                    <span className={styles.iconBg} style={{ ...iconBgStyle, background: backgroundMode === 'none' ? 'rgba(255,255,255,.18)' : iconBgStyle.background }}>{selectedIcon && isFlagIcon(selectedIcon.id) ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={relativeUrl} width={20} height={20} alt="" /> : <InlineStyledIcon url={relativeUrl} color={backgroundMode === 'none' ? '#FFFFFF' : iconColor} size={20} weight={iconWeight} style={iconStyle} flag={false} colorMode={effectiveMode} />}</span>
                     <div style={{ minWidth: 0 }}><div className={styles.tileValue}>847</div><div className={styles.tileLabel}>Active Users</div></div>
                   </div>
                   <div className={styles.sidebarItem}>
-                    <span className={styles.iconBg} style={iconBgStyle}>{selectedIcon && isFlagIcon(selectedIcon.id) ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={relativeUrl} width={16} height={16} alt="" /> : <InlineStyledIcon url={relativeUrl} color={iconColor} size={16} weight={iconWeight} style={iconStyle} flag={false} />}</span>
+                    <span className={styles.iconBg} style={iconBgStyle}>{selectedIcon && isFlagIcon(selectedIcon.id) ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={relativeUrl} width={16} height={16} alt="" /> : <InlineStyledIcon url={relativeUrl} color={iconColor} size={16} weight={iconWeight} style={iconStyle} flag={false} colorMode={effectiveMode} />}</span>
                     <span className={styles.sidebarText}>{selectedIcon?.name ?? 'Dashboard'}</span>
                   </div>
                 </div>
@@ -762,15 +1018,55 @@ export function IconLibraryStudio() {
 
             <div className={styles.inspectorActions}>
               {multiSelect && selectedCount > 0 && <div className={styles.urlBox}>{selectedCount} icon{selectedCount === 1 ? '' : 's'} selected</div>}
+              <button
+                type="button"
+                className={`${styles.copyBtn} ${styles.copyBtnPrimary}`}
+                disabled={pbitExportCount === 0}
+                onClick={addIconsToLayoutBuilder}
+                title="Send the selected icons (with their current customization) to the Layout Builder"
+              >
+                <ArrowUpRight size={15} /> {returnTo === '/layout-builder' ? 'Return to Layout Builder' : 'Add Selected Icons to Layout Builder'}
+                {pbitExportCount > 0 ? ` (${pbitExportCount})` : ''}
+              </button>
               <div className={styles.actionRow}>
-                <button type="button" className={`${styles.copyBtn} ${styles.copyBtnPrimary}`} disabled={!!exporting} onClick={handleDownloadSvg}><Download size={15} /> {exporting === 'svg' ? '…' : multiSelect && selectedCount > 1 ? 'SVG .zip' : 'SVG'}</button>
+                <button type="button" className={styles.copyBtn} disabled={!!exporting} onClick={handleDownloadSvg}><Download size={15} /> {exporting === 'svg' ? '…' : multiSelect && selectedCount > 1 ? 'SVG .zip' : 'SVG'}</button>
                 <button type="button" className={styles.copyBtn} disabled={!!exporting} onClick={handleDownloadPng}><ImageIcon size={15} /> {exporting === 'png' ? '…' : multiSelect && selectedCount > 1 ? 'PNG .zip' : 'PNG'}</button>
               </div>
-              <div className={styles.actionRow}>
-                <button type="button" className={`${styles.copyBtn} ${copied === 'svg' ? styles.copyBtnDone : ''}`} onClick={copySelectedSvg}>{copied === 'svg' ? <Check size={15} /> : <FileCode size={15} />} {copied === 'svg' ? 'Copied' : 'Copy SVG'}</button>
-                <button type="button" className={`${styles.copyBtn} ${copied === 'url' ? styles.copyBtnDone : ''}`} onClick={() => copyUrls(false)}>{copied === 'url' ? <Check size={15} /> : <Copy size={15} />} {copied === 'url' ? 'Copied' : multiSelect && selectedCount > 1 ? 'Copy URL List' : 'Copy URL'}</button>
-              </div>
-              <button type="button" className={`${styles.copyBtn} ${copied === 'rel' ? styles.copyBtnDone : ''}`} onClick={() => copyUrls(true)}>{copied === 'rel' ? <Check size={15} /> : <Link2 size={15} />} {copied === 'rel' ? 'Copied!' : multiSelect && selectedCount > 1 ? 'Copy Relative URL List' : 'Copy Relative URL'}</button>
+              {PBIT_EXPORT_VISIBLE && (
+                <>
+                  <button
+                    type="button"
+                    className={styles.copyBtn}
+                    disabled={!!exporting || pbitExportCount === 0}
+                    onClick={handleExportPbit}
+                    title={PBIT_EXPORT_VALIDATED
+                      ? 'Insert every selected icon as its own image visual in a Power BI template. Opens in the Power BI Desktop version used to create the base template and in newer supported Power BI Desktop releases.'
+                      : 'Diagnostic export — the generated .pbit is not yet confirmed to open in Power BI Desktop'}
+                  >
+                    <LayoutGrid size={15} />
+                    {exporting === 'pbit'
+                      ? 'Building template…'
+                      : !PBIT_EXPORT_VALIDATED
+                        ? `Power BI Template Export — Validation${pbitExportCount > 0 ? ` (${pbitExportCount} icon${pbitExportCount === 1 ? '' : 's'} · ${pbitPageCount} page${pbitPageCount === 1 ? '' : 's'})` : ''}`
+                        : pbitExportCount === 0
+                          ? 'Export Selected as Power BI Template'
+                          : `Export Selected as Power BI Template (${pbitExportCount} icon${pbitExportCount === 1 ? '' : 's'} · ${pbitPageCount} page${pbitPageCount === 1 ? '' : 's'})`}
+                  </button>
+                  {!PBIT_EXPORT_VALIDATED && (
+                    <p className={styles.helperNote}>
+                      PBIT generation is under compatibility validation. SVG and PNG exports remain available.
+                    </p>
+                  )}
+                </>
+              )}
+              <button
+                type="button"
+                className={`${styles.copyBtn} ${copied === 'url' ? styles.copyBtnDone : ''}`}
+                onClick={copyUrls}
+                title="Copy an absolute URL that renders this icon (customization included) — opens directly in a browser"
+              >
+                {copied === 'url' ? <Check size={15} /> : <Copy size={15} />} {copied === 'url' ? 'Copied' : multiSelect && selectedCount > 1 ? 'Copy URL List' : 'Copy URL'}
+              </button>
               <span aria-live="polite" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>{copied ? 'Copied' : ''}</span>
             </div>
           </div>

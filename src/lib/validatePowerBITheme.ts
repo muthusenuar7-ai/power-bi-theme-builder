@@ -294,6 +294,26 @@ function validateBackgroundAndBorderDefaults(visualStyles: UnknownRecord, errors
   })
 }
 
+function validatePieDonutPaletteSafety(theme: UnknownRecord, errors: string[]): void {
+  if (!isRecord(theme.visualStyles)) return
+
+  ;['*', 'pieChart', 'donutChart'].forEach((visualType) => {
+    const cards = visualCards(theme.visualStyles as UnknownRecord, visualType)
+    const dataPointCards = cards?.dataPoint
+    if (!Array.isArray(dataPointCards)) return
+
+    dataPointCards.forEach((card, index) => {
+      if (!isRecord(card)) return
+      if ('defaultColor' in card) {
+        errors.push(`visualStyles.${visualType}.*.dataPoint[${index}].defaultColor must not be exported for pie/donut palette cycling.`)
+      }
+      if ('fill' in card) {
+        errors.push(`visualStyles.${visualType}.*.dataPoint[${index}].fill must not be exported for pie/donut palette cycling.`)
+      }
+    })
+  })
+}
+
 function solidColorValue(card: unknown): string | undefined {
   if (!isRecord(card) || !isSolidColorObject(card.color)) return undefined
   const color = card.color as { solid: { color: string } }
@@ -391,14 +411,23 @@ export function validatePowerBITheme(
   if (!Array.isArray(theme.dataColors) || theme.dataColors.length === 0) {
     errors.push('dataColors must be a non-empty array.')
   } else {
+    if (theme.dataColors.length < 2) {
+      errors.push('dataColors must contain at least two colors so pie/donut categories can use multiple theme colors.')
+    }
     if (options.expectedPaletteSize && theme.dataColors.length !== options.expectedPaletteSize) {
       errors.push(`dataColors length ${theme.dataColors.length} does not match selected palette size ${options.expectedPaletteSize}.`)
     }
+    const uniqueColors = new Set<string>()
     theme.dataColors.forEach((color, index) => {
       if (typeof color !== 'string' || !POWER_BI_HEX.test(color)) {
         errors.push(`dataColors[${index}] must be a valid #RRGGBB color.`)
+      } else {
+        uniqueColors.add(color.toUpperCase())
       }
     })
+    if (uniqueColors.size < 2) {
+      errors.push('dataColors must not be the same repeated color; pie/donut category colors depend on the ordered root palette.')
+    }
   }
 
   ROOT_COLOR_KEYS.forEach((key) => {
@@ -420,6 +449,7 @@ export function validatePowerBITheme(
     validateVisualStyleSchemaValues(theme.visualStyles, 'visualStyles', errors)
     validateBackgroundAndBorderDefaults(theme.visualStyles, errors)
     validateExpectedBackgrounds(theme, options, errors)
+    validatePieDonutPaletteSafety(theme, errors)
   }
 
   validateNoNullUndefinedOrRgba(theme, 'theme', errors)

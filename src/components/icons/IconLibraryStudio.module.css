@@ -482,6 +482,17 @@
 }
 .copyBtnPrimary { background: var(--studio-accent); border-color: var(--studio-accent); color: #fff; }
 .copyBtnDone { background: #ECFDF5; border-color: var(--studio-accent); color: var(--studio-accent-2); }
+.copyBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.helperNote {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border-ui);
+  border-radius: 9px;
+  padding: 8px 10px;
+}
 .tagWrap { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag {
   font-size: 10.5px;

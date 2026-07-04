@@ -56,9 +56,15 @@ export default function LandingPage({ onApplyPreset, onSubscribe }: LandingPageP
       {/* ===== NAV ===== */}
       <nav className={styles.nav}>
         <div className={`${styles.wrap} ${styles.navRow}`}>
-          <Link href="/" className={styles.logo}>
-            <span className={styles.logoMark}><LogoGlyph /></span>
-            <span>{c.nav.brand.name}<span className={styles.logoSub}>{c.nav.brand.sub}</span></span>
+          <Link href="/" className={styles.logo} aria-label={`${c.nav.brand.name} — home`}>
+            {/* Real Datacense brand logo (same asset the app header uses). */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/assets/datacense-logo.jpg"
+              alt="Datacense"
+              style={{ height: 30, width: "auto", objectFit: "contain", borderRadius: 4, display: "block" }}
+            />
+            <span className={styles.logoSub}>{c.nav.brand.sub}</span>
           </Link>
           <div className={styles.navLinks}>
             {c.nav.links.map((l) => (
@@ -104,8 +110,40 @@ export default function LandingPage({ onApplyPreset, onSubscribe }: LandingPageP
         </div>
       </header>
 
-      {/* ===== COMPARISON + PRODUCTS ===== */}
+      {/* ===== THREE PRODUCTS — directly below the dashboard preview ===== */}
       <section className={styles.section} id="products">
+        <div className={styles.wrap}>
+          <div className={styles.sHead}>
+            <span className={styles.eyebrow}>The Platform</span>
+            <h2>Three tools. One Power BI design workspace.</h2>
+            <p>Build report layouts, generate professional themes, and create matching icons from one connected platform.</p>
+          </div>
+          <div className={styles.prod}>
+            {c.products.map((p) => {
+              const Icon = productGlyph[p.iconKey];
+              return (
+                <div className={styles.pcard} key={p.id}>
+                  <div className={`${styles.pico} ${accentClass[p.accent]}`}><Icon /></div>
+                  <h3>{p.title} <span className={`${styles.badge} ${styles.badgeLive}`}>LIVE</span></h3>
+                  <p className={styles.pcardDesc}>{p.description}</p>
+                  <ul>
+                    {p.features.map((f) => (
+                      <li key={f}>
+                        <span style={{ color: "var(--teal)", display: "inline-flex" }}><CheckGlyph size={16} /></span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href={p.link.href} className={styles.plink}>{p.link.label} →</Link>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== CAPABILITY COMPARISON ===== */}
+      <section className={`${styles.section} ${styles.sectionSoft}`} id="compare">
         <div className={styles.wrap}>
           <div className={styles.sHead}>
             <span className={styles.eyebrow}>{c.comparison.eyebrow}</span>
@@ -141,27 +179,6 @@ export default function LandingPage({ onApplyPreset, onSubscribe }: LandingPageP
             </div>
           </div>
 
-          <div className={styles.prod}>
-            {c.products.map((p) => {
-              const Icon = productGlyph[p.iconKey];
-              return (
-                <div className={styles.pcard} key={p.id}>
-                  <div className={`${styles.pico} ${accentClass[p.accent]}`}><Icon /></div>
-                  <h3>{p.title} <span className={`${styles.badge} ${p.status === "live" ? styles.badgeLive : styles.badgeSoon}`}>{p.status === "live" ? "LIVE" : "COMING SOON"}</span></h3>
-                  <p className={styles.pcardDesc}>{p.description}</p>
-                  <ul>
-                    {p.features.map((f) => (
-                      <li key={f}>
-                        <span style={{ color: p.status === "live" ? "var(--teal)" : "var(--gold-deep)", display: "inline-flex" }}><CheckGlyph size={16} /></span>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href={p.link.href} className={`${styles.plink} ${p.status === "soon" ? styles.plinkSoon : ""}`}>{p.link.label} →</Link>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </section>
 

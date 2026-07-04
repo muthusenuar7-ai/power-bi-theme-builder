@@ -68,3 +68,19 @@ sample.SemanticModel/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Prompt-generated development documents & progress artifacts.
+# These are audit summaries, redesign/mimic reports, QA checklists and progress
+# notes — written by the audit scripts, never read at build or runtime. Kept
+# locally only. (Authored docs — README*, AGENTS.md, CLAUDE.md,
+# REFERENCE_DECISION.md, docs/reference/**, docs/agent-prompts/,
+# docs/deployment/ — are intentionally NOT ignored.)
+docs/qa/
+
+# Generated diagnostic outputs (PBIT test artifacts, OPC validation JSON, etc.).
+# The real PBIT base templates live under public/templates/ and stay tracked.
+diagnostics/
+
+# Generated audit report output (scoped to the exact file the audit script
+# writes — not a broad reports/ pattern).
+reports/icon-duplicate-audit.json

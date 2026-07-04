@@ -1,0 +1,215 @@
+/**
+ * Power BI visual mapping — converts Theme Studio visual IDs to the
+ * pageName + visualName needed to embed each visual via the Power BI
+ * JavaScript SDK (type: 'visual').
+ *
+ * Source: powerbi-visual-mapping.json (UTF-16 LE encoded JSON at project root)
+ * Report: 4fb25784-f84a-4ccc-82c4-876b338e8cd1
+ *
+ * The JSON was decoded and normalised into this typed constant.
+ * Do NOT commit real embed tokens — use env vars only.
+ */
+
+export interface PbiVisualEntry {
+  /** Page name (internal PBI identifier) containing this visual. */
+  pageName: string
+  /** Visual name (internal PBI identifier). */
+  visualName: string
+  /** Human-readable label for UI display. */
+  displayName: string
+  /** Power BI visual type as reported in visual.json. */
+  pbiType: string
+}
+
+/**
+ * Maps every Theme Studio visual ID to its Power BI page + visual coordinates.
+ * IDs match those used in visualCatalog.ts and visualIconRegistry.ts.
+ */
+export const POWERBI_VISUAL_MAP: Record<string, PbiVisualEntry> = {
+  // ── Bar & Column ────────────────────────────────────────────────────────
+  bar: {
+    pageName:    'a15afb99766856d30fc4',
+    visualName:  'db1cc1e166be7709c3d0',
+    displayName: 'Stacked Bar Chart',
+    pbiType:     'barChart',
+  },
+  stackedbar: {
+    pageName:    'a15afb99766856d30fc4',
+    visualName:  'db1cc1e166be7709c3d0',
+    displayName: 'Stacked Bar Chart',
+    pbiType:     'barChart',
+  },
+  clusteredbar: {
+    pageName:    'ReportSection1',
+    visualName:  '719753a0efd7c77571ab',
+    displayName: 'Clustered Bar Chart',
+    pbiType:     'clusteredBarChart',
+  },
+  hundredstackedbar: {
+    pageName:    '16225d01bb5e58c07932',
+    visualName:  'fca00140c1c7a66292d3',
+    displayName: '100% Stacked Bar Chart',
+    pbiType:     'hundredPercentStackedBarChart',
+  },
+  column: {
+    pageName:    '81a4b3e1d2226be2ae4f',
+    visualName:  '3fbb1f940bedf2299216',
+    displayName: 'Stacked Column Chart',
+    pbiType:     'columnChart',
+  },
+  stackedcol: {
+    pageName:    '81a4b3e1d2226be2ae4f',
+    visualName:  '3fbb1f940bedf2299216',
+    displayName: 'Stacked Column Chart',
+    pbiType:     'columnChart',
+  },
+  clusteredcol: {
+    pageName:    '27800d59d7834d720b87',
+    visualName:  '792f61296027d10a86d2',
+    displayName: 'Clustered Column Chart',
+    pbiType:     'clusteredColumnChart',
+  },
+  hundredstackedcol: {
+    pageName:    '924932e50c07dbebd8ba',
+    visualName:  'ac482d7cd5931094970c',
+    displayName: '100% Stacked Column Chart',
+    pbiType:     'hundredPercentStackedColumnChart',
+  },
+
+  // ── Combo ───────────────────────────────────────────────────────────────
+  lineclustered: {
+    pageName:    '8ba0e86fba05ba379c42',
+    visualName:  '91eb0bf7536475359664',
+    displayName: 'Line & Clustered Column',
+    pbiType:     'lineClusteredColumnComboChart',
+  },
+  linestacked: {
+    pageName:    'ReportSectionefe2a06be717c7238030',
+    visualName:  '29a713ffc100fae86fcc',
+    displayName: 'Line & Stacked Column',
+    pbiType:     'lineStackedColumnComboChart',
+  },
+
+  // ── Line & Area ─────────────────────────────────────────────────────────
+  line: {
+    pageName:    '69df466efc6d65295877',
+    visualName:  '89d55289dbed0e0481ec',
+    displayName: 'Line Chart',
+    pbiType:     'lineChart',
+  },
+  area: {
+    pageName:    'a01cfc9f00867c36abb1',
+    visualName:  '35b47c8b061a495b4260',
+    displayName: 'Area Chart',
+    pbiType:     'stackedAreaChart',
+  },
+  stackedarea: {
+    pageName:    '18e847100d85d35c9574',
+    visualName:  'eae6d2e7580da8a9dd3e',
+    displayName: 'Stacked Area Chart',
+    pbiType:     'stackedAreaChart',
+  },
+  hundredstackedarea: {
+    pageName:    '9a0cbc4a3e622a9745fc',
+    visualName:  'b0a0067a7b1bcea4db36',
+    displayName: '100% Stacked Area Chart',
+    pbiType:     'hundredPercentStackedAreaChart',
+  },
+
+  // ── Composition ─────────────────────────────────────────────────────────
+  pie: {
+    pageName:    'ReportSection6c6e66b618491a497e59',
+    visualName:  '0271f31ae22c1b809338',
+    displayName: 'Pie Chart',
+    pbiType:     'pieChart',
+  },
+  donut: {
+    pageName:    '073d4eec58d9706ddc52',
+    visualName:  '8866ad9206280a2b79bd',
+    displayName: 'Donut Chart',
+    pbiType:     'donutChart',
+  },
+  funnel: {
+    pageName:    '779461d6e97e66ec73a1',
+    visualName:  'f3cc4f5656881994f76c',
+    displayName: 'Funnel Chart',
+    pbiType:     'funnel',
+  },
+  treemap: {
+    pageName:    'ReportSection936d864f98c2ae0ab919',
+    visualName:  'a1adaa2e80faec92956a',
+    displayName: 'Treemap',
+    pbiType:     'treemap',
+  },
+  waterfall: {
+    pageName:    'ReportSection6fd5fce070b1acea3520',
+    visualName:  'e8c62e3d60a89da949fc',
+    displayName: 'Waterfall Chart',
+    pbiType:     'waterfallChart',
+  },
+  ribbon: {
+    pageName:    'f803cd5900051340e121',
+    visualName:  'a161320906ec39e945fb',
+    displayName: 'Ribbon Chart',
+    pbiType:     'ribbonChart',
+  },
+
+  // ── Relationship ────────────────────────────────────────────────────────
+  scatter: {
+    pageName:    'ReportSectioned93309198eeb4c0e41d',
+    visualName:  '6e570c7c017667aeab31',
+    displayName: 'Scatter Chart',
+    pbiType:     'scatterChart',
+  },
+
+  // ── Tabular ─────────────────────────────────────────────────────────────
+  table: {
+    pageName:    '0c299c665357a61c9cfd',
+    visualName:  '0c9a02edf5467539f010',
+    displayName: 'Table',
+    pbiType:     'tableEx',
+  },
+  matrix: {
+    pageName:    '54a2ea76ed8acad5788b',
+    visualName:  '59d511f47af54b55b3eb',
+    displayName: 'Matrix',
+    pbiType:     'pivotTable',
+  },
+
+  // ── Cards, KPI, Slicers ─────────────────────────────────────────────────
+  cardCurrent: {
+    pageName:    '7ec584708b860a75d401',
+    visualName:  'a201e7fa16d41ace9cf0',
+    displayName: 'Card',
+    pbiType:     'cardVisual',
+  },
+  slicerStandard: {
+    pageName:    '7c71d98f878bc4e0b303',
+    visualName:  '661c845ff9404f2b8251',
+    displayName: 'Slicer',
+    pbiType:     'slicer',
+  },
+  buttonSlicer: {
+    pageName:    '5b96b51df8942c7a9311',
+    visualName:  '13ae823a975e38662df0',
+    displayName: 'Button Slicer',
+    pbiType:     'advancedSlicerVisual',
+  },
+  gauge: {
+    pageName:    'b5f8fbb0bed55e1435c4',
+    visualName:  '639a1022220474ddd7e1',
+    displayName: 'Gauge Chart',
+    pbiType:     'gauge',
+  },
+
+  // ── Not in mapping (no PBI page available) ───────────────────────────────
+  // bubble, decompositiontree, cardLegacy, multirowcard, kpi, listSlicer, tileSlicer
+}
+
+/**
+ * Look up the Power BI embed coordinates for a Theme Studio visual ID.
+ * Returns undefined when the visual has no corresponding page in the report.
+ */
+export function getPbiVisualEntry(studioId: string): PbiVisualEntry | undefined {
+  return POWERBI_VISUAL_MAP[studioId]
+}

@@ -148,6 +148,8 @@ const dropShadowPosition = theme.visualStyles?.['*']?.['*']?.dropShadow?.[0]?.po
 const barGridlineStyle = theme.visualStyles?.barChart?.['*']?.valueAxis?.[0]?.gridlineStyle
 const pieLabelPosition = theme.visualStyles?.pieChart?.['*']?.labels?.[0]?.position
 const donutLabelPosition = theme.visualStyles?.donutChart?.['*']?.labels?.[0]?.position
+const pieDataPoint = theme.visualStyles?.pieChart?.['*']?.dataPoint
+const donutDataPoint = theme.visualStyles?.donutChart?.['*']?.dataPoint
 const donutInnerRadiusRatio = theme.visualStyles?.donutChart?.['*']?.slices?.[0]?.innerRadiusRatio
 const treemapTilingMethod = theme.visualStyles?.treemap?.['*']?.layout?.[0]?.tilingMethod
 const slicerHeaderOutlineStyle = theme.visualStyles?.slicer?.['*']?.header?.[0]?.outlineStyle
@@ -207,6 +209,15 @@ if (!['outside', 'inside', 'preferOutside', 'preferInside'].includes(pieLabelPos
 }
 if (!['outside', 'inside', 'preferOutside', 'preferInside'].includes(donutLabelPosition)) {
   enumErrors.push(`donutChart labels.position was ${JSON.stringify(donutLabelPosition)}`)
+}
+if (Array.isArray(pieDataPoint) && pieDataPoint.some((card) => card?.defaultColor || card?.fill)) {
+  enumErrors.push(`pieChart dataPoint forced a global slice color: ${JSON.stringify(pieDataPoint)}`)
+}
+if (Array.isArray(donutDataPoint) && donutDataPoint.some((card) => card?.defaultColor || card?.fill)) {
+  enumErrors.push(`donutChart dataPoint forced a global slice color: ${JSON.stringify(donutDataPoint)}`)
+}
+if (theme.dataColors.length < 2 || new Set(theme.dataColors.map((color) => String(color).toUpperCase())).size < 2) {
+  enumErrors.push(`root dataColors did not preserve a multi-color palette: ${JSON.stringify(theme.dataColors)}`)
 }
 if (!Number.isInteger(donutInnerRadiusRatio)) {
   enumErrors.push(`donutChart slices.innerRadiusRatio was ${JSON.stringify(donutInnerRadiusRatio)}`)

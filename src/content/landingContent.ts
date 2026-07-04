@@ -41,16 +41,16 @@ export const landingContent: LandingContent = {
     subtitle:
       "From searchable icons to brand-perfect themes to downloadable report layouts — built to work together.",
     columns: [
-      { label: "Power BI Layout Builder", status: "soon" },
+      { label: "Power BI Layout Builder", status: "live" },
       { label: "Theme Builder", status: "live" },
       { label: "Icons Library", status: "live" },
     ],
     rows: [
       { feature: "Pre-built, searchable assets", cells: ["yes", "yes", "yes"] },
       { feature: "Brand-consistent theming", cells: ["yes", "yes", "no"] },
-      { feature: "Drag-and-drop report layouts", cells: ["partial", "no", "no"] },
-      { feature: "Direct downloadable layouts (.pbit / PBIX)", cells: ["partial", "no", "no"] },
-      { feature: "One-click export to Power BI", cells: ["partial", "yes", "yes"] },
+      { feature: "Drag-and-drop report layouts", cells: ["yes", "no", "no"] },
+      { feature: "Direct downloadable layouts (.pbit / PBIX)", cells: ["yes", "no", "no"] },
+      { feature: "One-click export to Power BI", cells: ["yes", "yes", "yes"] },
     ],
   },
 
@@ -59,8 +59,8 @@ export const landingContent: LandingContent = {
       id: "layout",
       iconKey: "layout",
       accent: "navy",
-      title: "Layout Builder",
-      status: "soon",
+      title: "Power BI Layout Builder",
+      status: "live",
       description:
         "Design report layouts visually and download them directly for Power BI in just a few clicks.",
       features: [
@@ -68,13 +68,13 @@ export const landingContent: LandingContent = {
         "Pre-built containers & sections",
         "Directly downloadable layouts",
       ],
-      link: { label: "Join the Waitlist", href: "/layout-builder" },
+      link: { label: "Open Layout Builder", href: "/layout-builder" },
     },
     {
       id: "theme",
       iconKey: "theme",
       accent: "gold",
-      title: "Theme Builder",
+      title: "Power BI Theme Studio",
       status: "live",
       description:
         "Create and manage brand-aligned themes in minutes — colors, typography, visuals and effects.",
@@ -89,16 +89,16 @@ export const landingContent: LandingContent = {
       id: "icons",
       iconKey: "icons",
       accent: "cyan",
-      title: "Icons Library",
+      title: "Icon Studio",
       status: "live",
       description:
-        "Thousands of professionally crafted, Power BI-optimized icons across every business category.",
+        "A curated Power BI business-icon library — 560+ professionally designed concepts with original multicolor artwork, monochrome recoloring, and every ISO country flag.",
       features: [
         "Search by keyword or category",
-        "Consistent line weights & styles",
-        "Copy as SVG, PNG or base64",
+        "Original multicolor + monochrome modes",
+        "Copy as SVG, data URI or DAX measure",
       ],
-      link: { label: "Explore Icons", href: "/icons" },
+      link: { label: "Open Icon Studio", href: "/icons" },
     },
   ],
 
@@ -120,7 +120,7 @@ export const landingContent: LandingContent = {
     eyebrow: "How it works",
     heading: "A simple workflow for stunning, on-brand reports",
     steps: [
-      { title: "Discover", description: "Explore thousands of icons and visual assets in one place." },
+      { title: "Discover", description: "Explore curated business icons, country flags and visual assets in one place." },
       { title: "Design", description: "Build and customize themes that reflect your brand." },
       { title: "Apply", description: "Apply themes and assets consistently across every report." },
       { title: "Deliver", description: "Publish polished, impactful reports with confidence.", gold: true },
@@ -133,16 +133,16 @@ export const landingContent: LandingContent = {
     items: [
       { period: "AVAILABLE NOW", title: "Icons Library", state: "done", description: "A growing library of professional, Power BI-ready icons with search and categories." },
       { period: "AVAILABLE NOW", title: "Theme Builder", state: "done", description: "Create and manage brand-aligned themes with global styles and one-click export." },
-      { period: "Q3 2025", title: "Power BI Layout Builder", state: "next", badge: "BETA", description: "Design report layouts visually and download them directly for Power BI." },
+      { period: "AVAILABLE NOW", title: "Power BI Layout Builder", state: "done", description: "Design report layouts visually and download them directly for Power BI." },
       { period: "Q4 2025", title: "Direct Power BI Integration", state: "next", description: "Push themes, icons and layouts straight into Power BI Desktop." },
     ],
     highlight: {
-      eyebrow: "The next big thing",
+      eyebrow: "Now available",
       title: "Power BI Layout Builder",
-      badge: "COMING SOON",
+      badge: "LIVE",
       description:
-        "Design, preview, and download professional report layouts directly for Power BI. Faster. Smarter. Consistent — with directly downloadable Power BI layouts coming soon.",
-      cta: { label: "Join the Waitlist", href: "/layout-builder" },
+        "Design, preview, and download professional report layouts directly for Power BI. Faster. Smarter. Consistent — with directly downloadable Power BI layouts.",
+      cta: { label: "Open Layout Builder", href: "/layout-builder" },
     },
   },
 
@@ -163,7 +163,7 @@ export const landingContent: LandingContent = {
         links: [
           { label: "Icons Library", href: "/icons" },
           { label: "Theme Builder", href: "/editor" },
-          { label: "Layout Builder (Soon)", href: "/layout-builder" },
+          { label: "Layout Builder", href: "/layout-builder" },
         ],
       },
       {

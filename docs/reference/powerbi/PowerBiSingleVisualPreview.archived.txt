@@ -1,0 +1,381 @@
+'use client'
+
+/**
+ * PowerBiSingleVisualPreview
+ *
+ * Embeds a single Power BI visual (type: 'visual') using the Power BI
+ * JavaScript SDK (powerbi-client). The visual is identified by the
+ * Theme Studio visual ID which is resolved to a pageName + visualName
+ * via POWERBI_VISUAL_MAP.
+ *
+ * Security notes:
+ *  - No access token is hardcoded.
+ *  - The embed token is read from NEXT_PUBLIC_POWERBI_DEMO_ACCESS_TOKEN.
+ *  - That variable must only be set for local development.
+ *  - Production should use a server-side token endpoint.
+ */
+
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { AlertCircle, LayoutDashboard, Loader2, MonitorPlay, Zap } from 'lucide-react'
+import { getPbiVisualEntry }  from '@/lib/powerBiVisualMap'
+import { generateThemeJSON }  from '@/lib/themeGenerator'
+import { useThemeStore }      from '@/store/themeStore'
+
+/* ── Env ──────────────────────────────────────────────────────────────── */
+const REPORT_ID  = process.env.NEXT_PUBLIC_POWERBI_REPORT_ID  ?? ''
+const EMBED_URL  = process.env.NEXT_PUBLIC_POWERBI_EMBED_URL  ?? ''
+const DEMO_TOKEN = process.env.NEXT_PUBLIC_POWERBI_DEMO_ACCESS_TOKEN ?? ''
+
+/* ── Types ────────────────────────────────────────────────────────────── */
+interface Props {
+  /** Theme Studio visual ID (from visualCatalog / focusVisual store). */
+  visualId: string | null
+  /** Called when the user clicks "Switch to Studio Preview" in fallback states. */
+  onSwitchToStudio?: () => void
+}
+
+type EmbedStatus = 'idle' | 'loading' | 'loaded' | 'error'
+
+/* ── Component ────────────────────────────────────────────────────────── */
+export function PowerBiSingleVisualPreview({ visualId, onSwitchToStudio }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const embedRef     = useRef<any>(null)
+  const serviceRef   = useRef<any>(null)
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+
+  const [status,  setStatus]  = useState<EmbedStatus>('idle')
+  const [errMsg,  setErrMsg]  = useState<string>('')
+  const [applyMsg, setApplyMsg] = useState<string>('')
+  const [applying, setApplying] = useState(false)
+
+  const mapping = visualId ? getPbiVisualEntry(visualId) : undefined
+
+  /* ── Embed ─────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    if (!containerRef.current) return
+    if (!mapping) return
+    if (!DEMO_TOKEN) return          // show no-token UI; don't attempt embed
+
+    let cancelled = false
+
+    async function mount() {
+      setStatus('loading')
+      setErrMsg('')
+
+      try {
+        // Dynamic import keeps powerbi-client out of the SSR bundle
+        const pbi = await import('powerbi-client')
+        if (cancelled) return
+
+        // Create (or reuse) the Power BI service
+        if (!serviceRef.current) {
+          serviceRef.current = new pbi.service.Service(
+            pbi.factories.hpmFactory,
+            pbi.factories.wpmpFactory,
+            pbi.factories.routerFactory,
+          )
+        }
+        const svc = serviceRef.current as InstanceType<typeof pbi.service.Service>
+
+        // Clean up any previous embed in this container
+        try { svc.reset(containerRef.current!) } catch { /* ignore if nothing embedded */ }
+
+        const config = {
+          type:        'visual' as const,
+          tokenType:   pbi.models.TokenType.Embed,
+          accessToken: DEMO_TOKEN,
+          embedUrl:    EMBED_URL,
+          id:          REPORT_ID,
+          pageName:    mapping!.pageName,
+          visualName:  mapping!.visualName,
+          settings: {
+            panes: {
+              filters:        { visible: false },
+              pageNavigation: { visible: false },
+            },
+            background: pbi.models.BackgroundType.Transparent,
+            bars: {
+              statusBar: { visible: false },
+            },
+          },
+        }
+
+        const embed = svc.embed(containerRef.current!, config)
+        embedRef.current = embed
+
+        embed.on('loaded', () => {
+          if (!cancelled) setStatus('loaded')
+        })
+
+        embed.on('error', (event: unknown) => {
+          if (cancelled) return
+          const detail = (event as { detail?: { message?: string } })?.detail
+          setStatus('error')
+          setErrMsg(detail?.message ?? 'Power BI embed returned an error.')
+        })
+      } catch (err) {
+        if (!cancelled) {
+          setStatus('error')
+          setErrMsg(err instanceof Error ? err.message : 'Failed to load Power BI SDK.')
+        }
+      }
+    }
+
+    void mount()
+
+    return () => {
+      cancelled = true
+      // Reset on unmount / visual change
+      if (serviceRef.current && containerRef.current) {
+        try { serviceRef.current.reset(containerRef.current) } catch { /* ignore */ }
+      }
+      embedRef.current = null
+    }
+  // Re-embed whenever pageName/visualName changes (different visual selected)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapping?.pageName, mapping?.visualName])
+
+  /* ── Apply theme ───────────────────────────────────────────────────── */
+  const handleApplyTheme = useCallback(async () => {
+    if (!embedRef.current) return
+    setApplying(true)
+    setApplyMsg('')
+
+    try {
+      const themeObj  = generateThemeJSON(useThemeStore.getState())
+      const themeJson = JSON.stringify(themeObj)
+
+      // The embedded Visual object may not expose applyTheme directly;
+      // we cast to any and handle the case where the method doesn't exist.
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+      await embedRef.current.applyTheme({ themeJson })
+      setApplyMsg('✓ Theme applied to live preview')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error'
+      if (msg.includes('is not a function') || msg.includes('not a function')) {
+        setApplyMsg('Theme apply not supported in visual embed — use Export JSON to apply in Power BI Desktop.')
+      } else {
+        setApplyMsg(`Theme apply failed: ${msg}`)
+      }
+    } finally {
+      setApplying(false)
+      window.setTimeout(() => setApplyMsg(''), 5000)
+    }
+  }, [])
+
+  /* ── Renders ────────────────────────────────────────────────────────── */
+
+  // No visual selected
+  if (!visualId) {
+    return (
+      <LiveShell>
+        <EmptyState
+          icon={<MonitorPlay size={32} strokeWidth={1.4} style={{ color: 'var(--accent-ui)' }} />}
+          title="No visual selected"
+          message="Select a visual from the Visuals panel on the left to preview it here."
+        />
+      </LiveShell>
+    )
+  }
+
+  // Visual not in mapping
+  if (!mapping) {
+    return (
+      <LiveShell>
+        <EmptyState
+          icon={<AlertCircle size={28} strokeWidth={1.4} style={{ color: '#F59E0B' }} />}
+          title={`No live preview for "${visualId}"`}
+          message="This visual type doesn't have a dedicated page in the reference report."
+          onSwitchToStudio={onSwitchToStudio}
+        />
+      </LiveShell>
+    )
+  }
+
+  // Token not configured
+  if (!DEMO_TOKEN) {
+    return (
+      <LiveShell>
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', gap: 14, padding: 32, textAlign: 'center', height: '100%',
+        }}>
+          <Zap size={32} strokeWidth={1.4} style={{ color: '#F59E0B', flexShrink: 0 }} />
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+            Embed token not configured
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', maxWidth: 360, lineHeight: 1.6, margin: 0 }}>
+            Add <code style={{ background: 'var(--surface-2)', padding: '1px 5px', borderRadius: 4, fontFamily: 'monospace' }}>
+              NEXT_PUBLIC_POWERBI_DEMO_ACCESS_TOKEN
+            </code> to your <code style={{ background: 'var(--surface-2)', padding: '1px 5px', borderRadius: 4, fontFamily: 'monospace' }}>.env.local</code>{' '}
+            to enable live Power BI visual preview.
+          </p>
+          <div style={{
+            padding: '12px 16px', borderRadius: 8, fontFamily: 'monospace', fontSize: 11,
+            background: 'var(--surface-2)', border: '1px solid var(--border-ui)',
+            color: 'var(--text-2)', textAlign: 'left', lineHeight: 1.8, maxWidth: 400,
+          }}>
+            <div style={{ color: 'var(--text-3)', marginBottom: 4 }}># .env.local</div>
+            NEXT_PUBLIC_POWERBI_REPORT_ID=4fb25784-...<br />
+            NEXT_PUBLIC_POWERBI_EMBED_URL=https://app.powerbi.com/reportEmbed?...<br />
+            NEXT_PUBLIC_POWERBI_DEMO_ACCESS_TOKEN=&lt;your-embed-token&gt;
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--text-3)', margin: 0 }}>
+            ⚠ Never commit the token to version control.
+          </p>
+          {onSwitchToStudio && (
+            <button
+              type="button"
+              onClick={onSwitchToStudio}
+              style={{
+                marginTop: 4,
+                height: 32, padding: '0 16px', borderRadius: 6,
+                border: '1px solid var(--border-ui)',
+                background: 'var(--surface)',
+                color: 'var(--text-2)',
+                fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontFamily: 'inherit',
+                transition: 'border-color .12s, background .12s',
+              }}
+            >
+              <LayoutDashboard size={13} strokeWidth={2} />
+              Switch to Studio Preview
+            </button>
+          )}
+        </div>
+      </LiveShell>
+    )
+  }
+
+  // Normal embed flow
+  return (
+    <LiveShell>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+        {/* Visual info + apply button */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '8px 16px', borderBottom: '1px solid var(--border-ui)',
+          background: 'var(--surface-2)', flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', flex: 1 }}>
+            {mapping.displayName}
+          </span>
+          {applyMsg && (
+            <span style={{ fontSize: 10.5, color: 'var(--text-3)', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {applyMsg}
+            </span>
+          )}
+          <button
+            type="button"
+            disabled={applying || status !== 'loaded'}
+            onClick={() => void handleApplyTheme()}
+            style={{
+              height: 28, padding: '0 12px', borderRadius: 6, border: '1px solid var(--accent-ui)',
+              background: 'var(--accent-ui)', color: '#fff',
+              fontSize: 11, fontWeight: 700, cursor: applying ? 'wait' : 'pointer',
+              opacity: (applying || status !== 'loaded') ? 0.55 : 1,
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              fontFamily: 'inherit', flexShrink: 0,
+              transition: 'opacity .12s',
+            }}
+          >
+            {applying ? <Loader2 size={11} strokeWidth={2} className="animate-spin" /> : <Zap size={11} strokeWidth={2} />}
+            Apply Theme to Preview
+          </button>
+        </div>
+
+        {/* Loading overlay */}
+        {status === 'loading' && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', background: 'var(--surface)', zIndex: 5, gap: 10,
+          }}>
+            <Loader2 size={20} strokeWidth={1.8} style={{ color: 'var(--accent-ui)' }} className="animate-spin" />
+            <span style={{ fontSize: 13, color: 'var(--text-2)' }}>Loading {mapping.displayName}…</span>
+          </div>
+        )}
+
+        {/* Error state */}
+        {status === 'error' && (
+          <div style={{
+            padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center',
+            gap: 10, textAlign: 'center',
+          }}>
+            <AlertCircle size={28} strokeWidth={1.4} style={{ color: '#EF4444' }} />
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Embed failed</div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', maxWidth: 320 }}>{errMsg}</div>
+          </div>
+        )}
+
+        {/* Embed container — powerbi-client writes an iframe into this div */}
+        <div
+          ref={containerRef}
+          style={{
+            flex: 1,
+            position: 'relative',
+            overflow: 'hidden',
+            /* Required by powerbi-client — it sets position:absolute on the iframe */
+            display: 'block',
+          }}
+        />
+      </div>
+    </LiveShell>
+  )
+}
+
+/* ── Sub-components ─────────────────────────────────────────────────── */
+
+function LiveShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      overflow: 'hidden', minHeight: 0, position: 'relative',
+      background: 'var(--surface)',
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function EmptyState({
+  icon, title, message, onSwitchToStudio,
+}: {
+  icon: React.ReactNode
+  title: string
+  message: string
+  onSwitchToStudio?: () => void
+}) {
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', gap: 12, padding: 32, textAlign: 'center',
+    }}>
+      {icon}
+      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{title}</div>
+      <p style={{ fontSize: 12, color: 'var(--text-3)', maxWidth: 320, lineHeight: 1.6, margin: 0 }}>{message}</p>
+      {onSwitchToStudio && (
+        <button
+          type="button"
+          onClick={onSwitchToStudio}
+          style={{
+            marginTop: 4,
+            height: 32, padding: '0 16px', borderRadius: 6,
+            border: '1px solid var(--border-ui)',
+            background: 'var(--surface)',
+            color: 'var(--text-2)',
+            fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            fontFamily: 'inherit',
+            transition: 'border-color .12s, background .12s',
+          }}
+        >
+          <LayoutDashboard size={13} strokeWidth={2} />
+          Switch to Studio Preview
+        </button>
+      )}
+    </div>
+  )
+}

@@ -1,7 +1,6 @@
 'use client'
 
 import type { DashboardTheme } from '@/lib/dashboardThemeResolver'
-import type { InsightDatum, Tone } from '@/lib/themeDashboardData'
 import { getDashboardTemplate, type VisualSpec } from '@/lib/themeDashboardTemplates'
 import { ThemeSlicerBar } from './ThemeSlicerBar'
 import { ThemeKpiCard } from './ThemeKpiCard'
@@ -16,104 +15,20 @@ interface Props {
 
 const FONT = "var(--preview-font-family, 'Segoe UI', sans-serif)"
 
-function toneColor(theme: DashboardTheme, tone: Tone): string {
-  if (tone === 'ok') return theme.good
-  if (tone === 'warn') return theme.neutral
-  return theme.bad
-}
-
-function InsightPanel({ theme, items }: { theme: DashboardTheme; items: InsightDatum[] }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 7 }}>
-      {items.map((item) => {
-        const color = toneColor(theme, item.tone)
-        return (
-          <div
-            key={item.label}
-            style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 9,
-              padding: '7px 9px 7px 12px',
-              borderRadius: 8,
-              background: theme.visualBackgroundAlt,
-              border: `1px solid ${theme.borderColor}`,
-              minWidth: 0,
-              overflow: 'hidden',
-            }}
-          >
-            <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: color }} />
-            <span
-              style={{
-                width: 18,
-                height: 18,
-                borderRadius: 999,
-                display: 'grid',
-                placeItems: 'center',
-                flexShrink: 0,
-                color,
-                background: `color-mix(in srgb, ${color} 14%, transparent)`,
-                border: `1px solid color-mix(in srgb, ${color} 42%, transparent)`,
-                fontSize: Math.max(9, theme.labelFontSize - 1),
-                fontWeight: 900,
-              }}
-            >
-              {item.tone === 'ok' ? '+' : item.tone === 'warn' ? '!' : '-'}
-            </span>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div
-                style={{
-                  fontSize: Math.max(9, theme.headerFontSize - 1),
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '.05em',
-                  color: theme.labelColor,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {item.label}
-              </div>
-              <div
-                style={{
-                  fontSize: Math.max(theme.labelFontSize + 1, theme.headerFontSize),
-                  fontWeight: 700,
-                  color: theme.titleColor,
-                  lineHeight: 1.25,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {item.value}
-              </div>
-            </div>
-            <div style={{ fontSize: Math.max(9, theme.labelFontSize - 1), color: theme.mutedText, whiteSpace: 'nowrap', flexShrink: 0 }}>
-              {item.sub}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 function VisualBody({ theme, visual }: { theme: DashboardTheme; visual: VisualSpec }) {
   switch (visual.type) {
     case 'comboLineColumn':
       return <ThemeMiniChart theme={theme} type="comboLineColumn" data={visual.data} />
     case 'donut':
       return <ThemeMiniChart theme={theme} type="donut" data={visual.data} />
+    case 'treemap':
+      return <ThemeMiniChart theme={theme} type="treemap" data={visual.data} />
     case 'stackedBar':
       return <ThemeMiniChart theme={theme} type="stackedBar" data={visual.data} />
     case 'clusteredColumn':
       return <ThemeMiniChart theme={theme} type="clusteredColumn" data={visual.data} />
     case 'table':
       return <ThemeTableCard theme={theme} rows={visual.data} />
-    case 'insight':
-      return <InsightPanel theme={theme} items={visual.data} />
   }
 }
 
@@ -158,21 +73,6 @@ export function ThemeDashboardPreview({ theme, spacing }: Props) {
             {template.subtitle}
           </div>
         </div>
-        <span
-          style={{
-            fontSize: theme.headerFontSize,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '.06em',
-            padding: '5px 11px',
-            borderRadius: 999,
-            flexShrink: 0,
-            color: theme.chipActiveText,
-            background: theme.chipActiveBackground,
-          }}
-        >
-          {template.name}
-        </span>
       </div>
 
       <ThemeSlicerBar theme={theme} slicers={template.slicers} />

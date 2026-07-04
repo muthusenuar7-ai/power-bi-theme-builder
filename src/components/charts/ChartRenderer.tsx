@@ -4,7 +4,6 @@ import type { ComponentType } from 'react'
 import { getChartCssVars, normalizeHex, numberValue, resolveVisualPreviewFormat } from '@/lib/formatPreview'
 import type { ResolvedVisualPreviewFormat } from '@/lib/formatPreview'
 import type { ChartDataset } from '@/types'
-import { contrastingLineColor } from '@/lib/colorUtils'
 import { resolveDashboardTheme, type DashboardTheme } from '@/lib/dashboardThemeResolver'
 import { resolvePreviewThemeDefaults } from '@/lib/effectiveVisualFormatResolver'
 import { useThemeStore } from '@/store/themeStore'
@@ -233,14 +232,9 @@ export function ChartRenderer({ visualId, size = 'card', dataset, dashboardPrevi
     '--preview-data-label-size': `${dashboardTheme.dataLabelFontSize}px`,
     '--preview-header-size': `${dashboardTheme.headerFontSize}px`,
     '--preview-callout-size': `${dashboardTheme.calloutFontSize}px`,
-    // High-contrast line colour for line+column / combo charts: columns use the
-    // primary palette colour, the line uses a clearly different (darker/lighter)
-    // palette colour so it stays visible above the columns.
-    '--combo-line-color': contrastingLineColor(
-      activePalette[0] ?? dashboardTheme.primary,
-      activePalette,
-      dashboardTheme.canvasBackground,
-    ),
+    // Power BI series-order behaviour for line+column / combo charts: the column
+    // series takes the first theme colour, the line series takes the second.
+    '--combo-line-color': activePalette[1] ?? dashboardTheme.secondary,
   }
 
   if (!Component) return <GenericFallback id={visualId} />

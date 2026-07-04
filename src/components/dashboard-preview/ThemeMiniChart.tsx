@@ -1,15 +1,16 @@
 'use client'
 
 import { useRef, useState, useEffect, useLayoutEffect } from 'react'
-import { contrastingLineColor } from '@/lib/colorUtils'
+import { getReadableTextColor } from '@/lib/colorUtils'
 import type { DashboardTheme } from '@/lib/dashboardThemeResolver'
-import type { ComboPoint, DonutSlice, StackedBarData, ClusteredColumnData } from '@/lib/themeDashboardData'
+import type { ComboPoint, DonutSlice, TreemapDatum, StackedBarData, ClusteredColumnData } from '@/lib/themeDashboardData'
 
 const FONT = "var(--preview-font-family, 'Segoe UI', sans-serif)"
 
 type ChartProps =
   | { theme: DashboardTheme; type: 'comboLineColumn'; data: ComboPoint[] }
   | { theme: DashboardTheme; type: 'donut'; data: DonutSlice[] }
+  | { theme: DashboardTheme; type: 'treemap'; data: TreemapDatum[] }
   | { theme: DashboardTheme; type: 'stackedBar'; data: StackedBarData }
   | { theme: DashboardTheme; type: 'clusteredColumn'; data: ClusteredColumnData }
 
@@ -31,6 +32,7 @@ export function ThemeMiniChart(props: ChartProps) {
     <div ref={ref} style={{ width: '100%', height: '100%', minHeight: 0 }}>
       {props.type === 'comboLineColumn' && <ComboLineColumn theme={props.theme} data={props.data} w={w} h={h} />}
       {props.type === 'donut' && <Donut theme={props.theme} data={props.data} w={w} h={h} />}
+      {props.type === 'treemap' && <Treemap theme={props.theme} data={props.data} w={w} h={h} />}
       {props.type === 'stackedBar' && <StackedBar theme={props.theme} data={props.data} w={w} h={h} />}
       {props.type === 'clusteredColumn' && <ClusteredColumn theme={props.theme} data={props.data} w={w} h={h} />}
     </div>
@@ -144,10 +146,11 @@ function ComboLineColumn({ theme, data, w, h }: ChartBox<ComboPoint[]>) {
   const max = niceCeil(Math.max(...data.map((d) => Math.max(d.actual, d.target))))
   const band = plotW / data.length
   const colW = Math.min(26, band * 0.5)
-  const colColor = paletteColor(theme, 0)
-  // Line must clearly contrast with the columns (column = primary palette colour,
-  // line = a darker/lighter high-contrast colour) so it stays visible above them.
-  const lineColor = contrastingLineColor(colColor, theme.dataColors, theme.canvasBackground)
+  // Power BI series-order behaviour: first series (columns) takes the first theme
+  // colour, second series (line) takes the second. Fall back to the resolved
+  // primary/secondary only when the palette is missing that slot.
+  const colColor = theme.dataColors[0] ?? theme.primary
+  const lineColor = theme.dataColors[1] ?? theme.secondary
   const yOf = (v: number) => mTop + plotH * (1 - v / max)
 
   const linePts = data.map((d, i) => `${(mLeft + band * i + band / 2).toFixed(1)},${yOf(d.target).toFixed(1)}`).join(' ')
@@ -252,6 +255,91 @@ function Donut({ theme, data, w, h }: ChartBox<DonutSlice[]>) {
             <text x={w - donutSize - 24} y={dataLabelSize(theme) * 0.34} textAnchor="end" fontSize={dataLabelSize(theme)} fontWeight={700} fontFamily={font(theme)} fill={theme.dataLabelColor}>
               {Math.round((slice.value / total) * 100)}%
             </text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+// ─── treemap: slice-and-dice tiles, one theme palette colour per tile ───────────────
+
+interface TreemapTile {
+  label: string
+  value: number
+  index: number
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+/** Simple recursive slice-and-dice layout: place the largest remaining item on
+ *  the long edge of the remaining rectangle. Deterministic, well-proportioned
+ *  for the 4–6 tiles the preview uses (no full squarify needed). */
+function layoutTreemap(data: TreemapDatum[], x: number, y: number, w: number, h: number): TreemapTile[] {
+  const items = data.map((d, index) => ({ ...d, index })).sort((a, b) => b.value - a.value)
+  const tiles: TreemapTile[] = []
+  let rect = { x, y, w, h }
+  let remaining = items.reduce((sum, d) => sum + d.value, 0) || 1
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    if (i === items.length - 1) {
+      tiles.push({ label: item.label, value: item.value, index: item.index, ...rect })
+      break
+    }
+    const share = item.value / remaining
+    if (rect.w >= rect.h) {
+      const tw = rect.w * share
+      tiles.push({ label: item.label, value: item.value, index: item.index, x: rect.x, y: rect.y, w: tw, h: rect.h })
+      rect = { x: rect.x + tw, y: rect.y, w: rect.w - tw, h: rect.h }
+    } else {
+      const th = rect.h * share
+      tiles.push({ label: item.label, value: item.value, index: item.index, x: rect.x, y: rect.y, w: rect.w, h: th })
+      rect = { x: rect.x, y: rect.y + th, w: rect.w, h: rect.h - th }
+    }
+    remaining -= item.value
+  }
+  return tiles
+}
+
+function Treemap({ theme, data, w, h }: ChartBox<TreemapDatum[]>) {
+  const total = data.reduce((sum, d) => sum + d.value, 0) || 1
+  const tiles = layoutTreemap(data, 2, 2, w - 4, h - 4)
+  const ls = labelSize(theme)
+  const ds = dataLabelSize(theme)
+
+  return (
+    <svg width="100%" height="100%" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+      {tiles.map((tile) => {
+        // Sequential theme palette colour per tile (Power BI treemap behaviour).
+        const color = paletteColor(theme, tile.index)
+        const text = getReadableTextColor(color)
+        const pct = Math.round((tile.value / total) * 100)
+        const fitsLabel = tile.w > ls * 5.4 && tile.h > ls * 2.6
+        const fitsValue = tile.w > ds * 4 && tile.h > ls * 2.6 + ds * 1.6
+        return (
+          <g key={tile.label}>
+            <rect
+              x={tile.x}
+              y={tile.y}
+              width={Math.max(0, tile.w - 2)}
+              height={Math.max(0, tile.h - 2)}
+              rx={3}
+              fill={color}
+              stroke={theme.visualBackground}
+              strokeWidth={1}
+            />
+            {fitsLabel && (
+              <text x={tile.x + 7} y={tile.y + ls + 6} fontSize={ls} fontWeight={600} fontFamily={font(theme)} fill={text}>
+                {truncate(tile.label, Math.floor(tile.w / (ls * 0.62)))}
+              </text>
+            )}
+            {fitsValue && (
+              <text x={tile.x + 7} y={tile.y + ls + 6 + ds + 4} fontSize={ds} fontFamily={font(theme)} fill={text} opacity={0.88}>
+                ${fmtNum(tile.value)}M · {pct}%
+              </text>
+            )}
           </g>
         )
       })}

@@ -7,11 +7,12 @@ import {
   type KpiIconAssignment,
 } from "@/lib/layout-builder/iconIntegration";
 import { getVisualLabel } from "@/lib/layout-builder/visualCatalog";
+import { CanvasZoomBar } from "./CanvasZoomBar";
+import { useCanvasZoom } from "./useCanvasZoom";
 
 interface CanvasPreviewProps {
   state: LayoutState;
   zones: Zone[];
-  zoom: number;
   selectedZoneId: string | null;
   selectedZoneIds: string[];
   kpiIcons?: Record<string, KpiIconAssignment>;
@@ -32,7 +33,6 @@ const zoneTheme: Record<ZoneType, { border: string; fill: string }> = {
 export function CanvasPreview({
   state,
   zones,
-  zoom,
   selectedZoneId,
   selectedZoneIds,
   kpiIcons,
@@ -41,6 +41,12 @@ export function CanvasPreview({
   onSelectZone,
   onCtrlSelectZone,
 }: CanvasPreviewProps) {
+  // Zoom affects only this preview — never the layout model or exports.
+  const zoomCtl = useCanvasZoom({
+    canvasWidth: state.canvasWidth,
+    canvasHeight: state.canvasHeight,
+  });
+  const zoom = zoomCtl.scale;
   /** Assigned KPI/title icon for a zone, with its icon box + adjusted content box. */
   const assignedIconFor = (
     zone: Zone,
@@ -67,8 +73,9 @@ export function CanvasPreview({
         <span className="canvas-info">
           Zones: <strong>{zones.length}</strong>
         </span>
+        <CanvasZoomBar zoom={zoomCtl} />
       </div>
-      <div className="canvas-viewport">
+      <div className="canvas-viewport" ref={zoomCtl.viewportRef}>
         <div
           className="canvas-el"
           style={{ width: state.canvasWidth * zoom, height: state.canvasHeight * zoom }}

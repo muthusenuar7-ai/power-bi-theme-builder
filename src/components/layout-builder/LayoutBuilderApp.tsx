@@ -157,7 +157,6 @@ export default function App() {
   const [reportState, setReportState] = useState<ReportState>(
     () => restoredSession?.reportState ?? defaultReportState(),
   );
-  const [zoom, setZoom] = useState(0.6);
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(
     () => restoredSession?.selectedZoneId ?? null,
   );
@@ -1142,7 +1141,6 @@ export default function App() {
         pageCount={reportState.pages.length}
         theme={theme}
         zoneCount={zones.length}
-        zoom={zoom}
         onAddIcons={handleAddIcons}
         onExportCsv={handleExportCsv}
         onExportJson={handleExportJson}
@@ -1150,7 +1148,6 @@ export default function App() {
         onRedo={handleRedo}
         onThemeChange={setTheme}
         onUndo={handleUndo}
-        onZoomChange={setZoom}
       />
       <IntegrationBar
         exportingCombined={exportingCombinedPbit}
@@ -1176,7 +1173,6 @@ export default function App() {
             state={normalizedState}
             titleIcon={activePage.titleIcon}
             zones={zones}
-            zoom={zoom}
             onCtrlSelectZone={handleCtrlSelectZone}
             onSelectZone={(id) => { setSelectedZoneId(id); if (id === null) setSelectedZoneIds([]); }}
           />

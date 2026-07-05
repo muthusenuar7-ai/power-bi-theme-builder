@@ -1032,7 +1032,10 @@ select.ctrl { cursor: pointer; }
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto; display: flex;
-  align-items: flex-start; justify-content: center;
+  /* `safe center` centers the canvas when it is smaller than the workspace but
+     falls back to start-alignment when it is larger — so a manually zoomed-in
+     canvas can be fully scrolled to instead of being clipped on the leading edge. */
+  align-items: safe center; justify-content: safe center;
   padding: 36px;
   background: var(--canvas-bg);
 }
@@ -1088,6 +1091,65 @@ select.ctrl { cursor: pointer; }
 }
 .mode-tab.sel { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
 .mode-tab:hover:not(.sel) { color: var(--text); }
+
+/* ═══════════════════════════════════════════════
+   CANVAS ZOOM BAR (Power BI-style)
+═══════════════════════════════════════════════ */
+.zoom-bar {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 6px;
+  flex-shrink: 0;
+}
+.zoom-icon-btn {
+  appearance: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  border: 1px solid var(--border2); border-radius: 6px;
+  background: var(--surface2); color: var(--text);
+  cursor: pointer; transition: background 0.13s, border-color 0.13s;
+}
+.zoom-icon-btn:hover:not(:disabled) { background: var(--surface3); border-color: var(--border3); }
+.zoom-icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.zoom-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 116px; height: 4px;
+  border-radius: 3px;
+  background: var(--surface3);
+  cursor: pointer;
+}
+.zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--surface);
+  box-shadow: var(--shadow-sm); cursor: pointer;
+}
+.zoom-slider::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--surface);
+  box-shadow: var(--shadow-sm); cursor: pointer;
+}
+.zoom-percent {
+  min-width: 40px; text-align: right;
+  font-size: 12px; font-weight: 600; color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--sans);
+}
+.zoom-bar-divider {
+  width: 1px; height: 18px; background: var(--border2); margin: 0 2px;
+}
+.zoom-mode-btn {
+  appearance: none; border: 1px solid var(--border2);
+  background: var(--surface2); color: var(--muted);
+  padding: 3px 8px; border-radius: 6px;
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.13s;
+}
+.zoom-mode-btn:hover { color: var(--text); border-color: var(--border3); }
+.zoom-mode-btn.sel {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
 
 /* Toast */
 .toast {

@@ -17,12 +17,10 @@ interface TopbarProps {
   zoneCount: number;
   pageCount: number;
   iconCount: number;
-  zoom: number;
   exportingPbit: boolean;
   canUndo: boolean;
   canRedo: boolean;
   theme: Theme;
-  onZoomChange: (zoom: number) => void;
   onUndo: () => void;
   onRedo: () => void;
   onAddIcons: () => void;
@@ -38,12 +36,10 @@ export function Topbar({
   zoneCount,
   pageCount,
   iconCount,
-  zoom,
   exportingPbit,
   canUndo,
   canRedo,
   theme,
-  onZoomChange,
   onUndo,
   onRedo,
   onAddIcons,
@@ -69,19 +65,6 @@ export function Topbar({
       <span className="topbar-section">
         {canvasWidth} x {canvasHeight} · {zoneCount} zones · {pageCount} {pageCount === 1 ? "page" : "pages"}
       </span>
-      <div className="topbar-divider" />
-      <div className="mode-tabs" aria-label="Canvas zoom">
-        {[0.6, 0.75, 1].map((value) => (
-          <button
-            className={`mode-tab ${zoom === value ? "sel" : ""}`}
-            key={value}
-            onClick={() => onZoomChange(value)}
-            type="button"
-          >
-            {Math.round(value * 100)}%
-          </button>
-        ))}
-      </div>
       <div className="topbar-divider" />
       <div className="topbar-history" aria-label="Undo / Redo">
         <button
